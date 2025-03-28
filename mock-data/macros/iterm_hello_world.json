@@ -1,52 +1,43 @@
 {
-	"id": "iterm_hello_world",
-	"name": "iTerm Hello World",
-	"description": "Opens iTerm and types 'Hello, World!'",
-	"sequence": [
-		{
-			"type": "keypress",
-			"value": "space",
-			"modifiers": ["meta"]
-		},
-		{
-			"type": "delay",
-			"value": 500
-		},
-		{
-			"type": "text",
-			"value": "iterm"
-		},
-		{
-			"type": "delay",
-			"value": 300
-		},
-		{
-			"type": "keypress",
-			"value": "return"
-		},
-		{
-			"type": "delay",
-			"value": 1000
-		},
-		{
-			"type": "text",
-			"value": "echo 'Hello, World!'"
-		},
-		{
-			"type": "keypress",
-			"value": "return"
-		},
-		{
-			"type": "delay",
-			"value": 500
-		},
-		{
-			"type": "text",
-			"value": "exit"
-		},
-		{
-			"type": "keypress",
-			"value": "return"
-		}
-	]
-}
+  "id": "iterm_hello_world",
+  "name": "iTerm Hello World",
+  "description": "Opens iTerm via Spotlight and types 'hello world!'",
+  "commands": [
+    {
+      "type": "key_press",
+      "report": ["0x08", "0x00", "0x2C", "0x00", "0x00", "0x00", "0x00", "0x00"]
+    },
+    {
+      "type": "delay",
+      "milliseconds": 300
+    },
+    {
+      "type": "type_text",
+      "text": "iTerm"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 500
+    },
+    {
+      "type": "key_press",
+      "report": ["0x00", "0x00", "0x28", "0x00", "0x00", "0x00", "0x00", "0x00"]
+    },
+    {
+      "type": "delay",
+      "milliseconds": 1000
+    },
+    {
+      "type": "type_text",
+      "text": "echo \"hello world\""
+    },
+    {
+      "type": "delay",
+      "milliseconds": 300
+    },
+    {
+      "type": "key_press",
+      "report": ["0x00", "0x00", "0x28", "0x00", "0x00", "0x00", "0x00", "0x00"]
+    }
+  ]
+} 

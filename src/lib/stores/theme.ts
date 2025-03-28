@@ -1,47 +1,41 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-import {
-	getSystemPrefersDarkMode,
-	applyTheme,
-	listenForSystemThemeChanges
-} from '$lib/utils/theme';
 
-export type Theme = 'light' | 'dark';
+type Theme = 'light' | 'dark';
 
-// Initialize theme from localStorage or system preference
+// Get initial theme from localStorage or default to light
 const getInitialTheme = (): Theme => {
-	if (!browser) return 'dark';
+	if (!browser) return 'light';
 
 	const savedTheme = localStorage.getItem('theme');
-	if (savedTheme === 'light' || savedTheme === 'dark') {
-		return savedTheme;
-	}
-
-	return getSystemPrefersDarkMode() ? 'dark' : 'light';
+	return savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'light';
 };
 
-// Create the theme store
+// Create the store
 export const theme = writable<Theme>(getInitialTheme());
 
-// Apply the theme when it changes
+// Initialize theme attributes on document if in browser
 if (browser) {
-	// Apply initial theme
-	applyTheme(getInitialTheme());
+	// Set initial theme attribute
+	document.documentElement.setAttribute('data-theme', getInitialTheme());
 
 	// Subscribe to theme changes
 	theme.subscribe((value) => {
+		// Update localStorage
 		localStorage.setItem('theme', value);
-		applyTheme(value);
-	});
 
-	// Set up listener for system theme changes
-	const unsubscribe = listenForSystemThemeChanges((isDark) => {
-		const currentTheme = localStorage.getItem('theme');
-		// Only update if the user hasn't explicitly set a preference
-		if (!currentTheme) {
-			theme.set(isDark ? 'dark' : 'light');
-		}
+		// Update document attribute
+		document.documentElement.setAttribute('data-theme', value);
 	});
+}
+
+// Update theme in the DOM
+function updateTheme(newTheme: 'light' | 'dark'): void {
+	if (newTheme === 'dark') {
+		document.documentElement.classList.add('dark');
+	} else {
+		document.documentElement.classList.remove('dark');
+	}
 }
 
 // Toggle between light and dark themes
@@ -50,7 +44,7 @@ export function toggleTheme(): void {
 }
 
 // Set a specific theme
-export function setTheme(newTheme: Theme): void {
+export function setTheme(newTheme: 'light' | 'dark'): void {
 	theme.set(newTheme);
 }
 
@@ -58,6 +52,6 @@ export function setTheme(newTheme: Theme): void {
 export function useSystemTheme(): void {
 	if (browser) {
 		localStorage.removeItem('theme');
-		theme.set(getSystemPrefersDarkMode() ? 'dark' : 'light');
+		theme.set(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 	}
 }

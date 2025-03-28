@@ -1,131 +1,48 @@
 {
-	"name": "Example Macropad",
-	"version": "1.0.0",
-	"buttons": [
-		{
-			"id": 1,
-			"label": "Copy",
-			"action": "keypress",
-			"keyCode": 99,
-			"modifiers": ["ctrl"],
-			"color": "#3498db"
-		},
-		{
-			"id": 2,
-			"label": "Paste",
-			"action": "keypress",
-			"keyCode": 118,
-			"modifiers": ["ctrl"],
-			"color": "#2ecc71"
-		},
-		{
-			"id": 3,
-			"label": "Cut",
-			"action": "keypress",
-			"keyCode": 120,
-			"modifiers": ["ctrl"],
-			"color": "#e74c3c"
-		},
-		{
-			"id": 4,
-			"label": "Undo",
-			"action": "keypress",
-			"keyCode": 122,
-			"modifiers": ["ctrl"],
-			"color": "#f39c12"
-		},
-		{
-			"id": 5,
-			"label": "VSCode",
-			"action": "macro",
-			"macro": "launch_vscode",
-			"color": "#9b59b6"
-		},
-		{
-			"id": 6,
-			"label": "Terminal",
-			"action": "macro",
-			"macro": "launch_terminal",
-			"color": "#34495e"
-		}
-	],
-	"encoders": [
-		{
-			"id": 1,
-			"clockwise": {
-				"type": "keypress",
-				"value": "volume_up",
-				"modifiers": []
-			},
-			"counterClockwise": {
-				"type": "keypress",
-				"value": "volume_down",
-				"modifiers": []
-			},
-			"press": {
-				"type": "keypress",
-				"value": "mute",
-				"modifiers": []
-			}
-		},
-		{
-			"id": 2,
-			"clockwise": {
-				"type": "keypress",
-				"value": "right",
-				"modifiers": []
-			},
-			"counterClockwise": {
-				"type": "keypress",
-				"value": "left",
-				"modifiers": []
-			},
-			"press": {
-				"type": "keypress",
-				"value": "enter",
-				"modifiers": []
-			}
-		}
-	],
-	"display": {
-		"brightness": 80,
-		"timeout": 60,
-		"defaultScreen": "main",
-		"screens": [
-			{
-				"id": "main",
-				"name": "Main Screen",
-				"content": "Macropad Ready"
-			},
-			{
-				"id": "info",
-				"name": "Info Screen",
-				"content": "Battery: 85%"
-			}
-		]
-	},
-	"layout": {
-		"id": "default",
-		"name": "Default Layout",
-		"rows": 4,
-		"columns": 4,
-		"buttonPositions": [
-			{ "id": 1, "row": 1, "col": 1 },
-			{ "id": 2, "row": 1, "col": 2 },
-			{ "id": 3, "row": 2, "col": 1 },
-			{ "id": 4, "row": 2, "col": 2 },
-			{ "id": 5, "row": 3, "col": 1 },
-			{ "id": 6, "row": 3, "col": 2 }
-		],
-		"encoderPositions": [
-			{ "id": 1, "row": 1, "col": 4 },
-			{ "id": 2, "row": 3, "col": 4 }
-		],
-		"displayPosition": {
-			"row": 1,
-			"col": 3,
-			"rowSpan": 3,
-			"colSpan": 1
-		}
-	}
+  "components": [
+    {
+      "id": "display-1",
+      "type": "display",
+      "size": { "rows": 2, "columns": 3 },
+      "start_location": { "row": 0, "column": 0 }
+    },
+    {
+      "id": "button-1",
+      "type": "button",
+      "size": { "rows": 1, "columns": 1 },
+      "start_location": { "row": 0, "column": 3 }
+
+    },
+    {
+      "id": "encoder-1",
+      "type": "encoder",
+      "size": { 
+        "rows": 1, 
+        "columns": 1 
+      },
+      "start_location": { 
+        "row": 0, 
+        "column": 4 
+      },
+      "with_button": true,  
+      "configuration": {
+        "type": "mechanical", 
+        "direction": 1        
+      },
+      "mechanical": {
+        "pin_a": 2,
+        "pin_b": 4,
+        "steps_per_revolution": 24,
+        "detents_per_revolution": 12,
+        "has_physical_detents": true
+      },
+      "as5600": {
+        "pin_sda": null,
+        "pin_scl": null,
+        "steps_per_revolution": 4096,
+        "zero_position": null,
+        "magnet_strength_threshold": null
+      }
+    }
+  ]
 }
