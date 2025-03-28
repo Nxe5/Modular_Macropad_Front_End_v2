@@ -1,82 +1,96 @@
-# Modular Macropad Frontend
+# Modular Macropad Configuration Tool
 
-A web-based configuration tool for the ESP32 Modular Macropad. This application allows you to customize your macropad's buttons, encoders, display, and macros.
+A modern web application for configuring and customizing your Ocho Labs Macropad device.
+
+## Overview
+
+This web-based tool allows you to customize and configure your mechanical macropad with powerful shortcuts and RGB lighting. The application features a clean, intuitive interface with both light and dark mode support.
 
 ## Features
 
-- Configure macropad layout and components
-- Customize buttons with different actions and colors
-- Define encoder rotation and press behaviors
-- Adjust display settings
-- Create and edit macros
-- Dark mode support
+- **Macros Configuration**: Create and manage custom key mappings and macros
+- **Lighting Configuration**: Customize RGB lighting effects and colors
+- **Settings Management**: Configure device settings
+- **Raw Configuration Editor**: Directly edit device configuration files:
+  - Info Configuration
+  - Components Configuration
+  - Actions Configuration
+  - LEDs Configuration
+  - Reports Configuration
 
-## Development
+## Getting Started
 
 ### Prerequisites
 
-- Node.js (v14 or later)
-- npm or pnpm
+- Node.js (16.x or later)
+- npm or yarn
+- Macropad device (for full functionality)
 
-### Getting Started
+### Installation
 
-1. Clone the repository
+1. Clone the repository:
+
+   ```
+   git clone <repository-url>
+   cd Modular_Macropad_Front_End_v2
+   ```
+
 2. Install dependencies:
 
-```bash
-npm install
-# or
-pnpm install
-```
+   ```
+   npm install
+   ```
+
+   or
+
+   ```
+   yarn
+   ```
 
 3. Start the development server:
 
-```bash
-npm run dev
-# or
-pnpm dev
-```
+   ```
+   npm run dev -- --host
+   ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+   or
 
-### Building for Production
+   ```
+   yarn dev --host
+   ```
 
-```bash
-npm run build
-# or
-pnpm build
-```
+4. Open your browser and navigate to the displayed URL (typically http://localhost:5173)
 
 ## Project Structure
 
+- `src/`: Main source code
+  - `lib/`: Reusable components and utilities
+    - `components/`: UI components
+    - `api/`: API communication
+    - `stores/`: Svelte stores for state management
+    - `types/`: TypeScript type definitions
+    - `utils/`: Utility functions
+  - `routes/`: Page components (Svelte routes)
+  - `app.css`: Global styles
+- `mock-data/`: Mock JSON data for development and testing
+
+## Building for Production
+
+To create a production build:
+
 ```
-modular-macropad-frontend/
-├── src/
-│   ├── lib/
-│   │   ├── components/           # Reusable UI components
-│   │   │   ├── Button/
-│   │   │   ├── Display/
-│   │   │   ├── Encoder/
-│   │   │   └── Layout/
-│   │   ├── stores/               # Svelte stores for state management
-│   │   ├── types/                # TypeScript type definitions
-│   │   ├── api/                  # API client and endpoints
-│   │   └── utils/                # Utility functions
-│   ├── routes/                   # SvelteKit routes
-│   └── app.html
-├── static/                       # Static assets
-├── tests/                        # Test files
-├── mock-data/                    # Mock data for development
-├── package.json
-├── svelte.config.js
-├── tsconfig.json
-└── README.md
+npm run build
 ```
 
-## Connecting to the Macropad
+The built files will be in the `dist/` directory, ready to be deployed to a web server.
 
-By default, the application connects to `http://localhost:8080` for development. To connect to your actual ESP32 macropad, update the `API_BASE_URL` in `src/lib/api/client.ts` with your macropad's IP address.
+## Technologies
+
+- [Svelte](https://svelte.dev/) + [SvelteKit](https://kit.svelte.dev/) - Frontend framework
+- [TypeScript](https://www.typescriptlang.org/) - For type safety
+- [Lucide Icons](https://lucide.dev/) - SVG icon library
+- CSS Variables - For theming and styling
 
 ## License
 
-MIT
+[MIT License](LICENSE)
