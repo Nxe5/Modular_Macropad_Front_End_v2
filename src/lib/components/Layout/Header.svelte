@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ThemeToggle from '../shared/ThemeToggle.svelte';
 	import ConnectionStatus from '../shared/ConnectionStatus.svelte';
-	import { Home, Settings, Terminal, Layers, Lightbulb } from 'lucide-svelte';
+	import { Keyboard, Settings, FileJson, Layers, Lightbulb } from 'lucide-svelte';
 
 	export let connected = true;
 </script>
@@ -20,8 +20,8 @@
 				href="/"
 				class="text-text-primary hover:text-accent-color flex items-center py-1 transition-colors"
 			>
-				<Home class="mr-1.5 h-4 w-4" />
-				<span>Home</span>
+				<Keyboard class="mr-1.5 h-4 w-4" />
+				<span>Macropad</span>
 			</a>
 			<a
 				href="/macros"
@@ -48,8 +48,8 @@
 				href="/config"
 				class="text-text-primary hover:text-accent-color flex items-center py-1 transition-colors"
 			>
-				<Terminal class="mr-1.5 h-4 w-4" />
-				<span>Raw Config</span>
+				<FileJson class="mr-1.5 h-4 w-4" />
+				<span>Raw Configurations</span>
 			</a>
 		</nav>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Home, Settings, Terminal, Layers, Lightbulb, X } from 'lucide-svelte';
+	import { Keyboard, Settings, FileJson, Layers, Lightbulb, X } from 'lucide-svelte';
 	export let isOpen = false;
 
 	function closeMenu() {
@@ -50,8 +50,8 @@
 						class="text-text-primary hover:bg-bg-secondary flex items-center rounded-md px-3 py-2 transition-colors"
 						on:click={closeMenu}
 					>
-						<Home class="mr-3 h-5 w-5" />
-						Home
+						<Keyboard class="mr-3 h-5 w-5" />
+						Macropad
 					</a>
 				</li>
 				<li>
@@ -90,8 +90,8 @@
 						class="text-text-primary hover:bg-bg-secondary flex items-center rounded-md px-3 py-2 transition-colors"
 						on:click={closeMenu}
 					>
-						<Terminal class="mr-3 h-5 w-5" />
-						Raw Config
+						<FileJson class="mr-3 h-5 w-5" />
+						Raw Configurations
 					</a>
 				</li>
 			</ul>

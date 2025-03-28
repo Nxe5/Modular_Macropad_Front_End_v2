@@ -1,21 +1,20 @@
 <script lang="ts">
 	import '../app.css';
-	import { theme, toggleTheme } from '$lib/stores/theme';
+	import { theme } from '$lib/stores/theme';
+	import Header from '$lib/components/layout/Header.svelte';
+	import Sidebar from '$lib/components/layout/Sidebar.svelte';
 	import { onMount } from 'svelte';
+
+	let sidebarOpen = false;
+
+	function toggleSidebar() {
+		sidebarOpen = !sidebarOpen;
+	}
 </script>
 
 <div class="app" data-theme={$theme}>
-	<header>
-		<div class="logo">Macropad Config</div>
-		<nav>
-			<a href="/">Home</a>
-			<a href="/config">Configuration</a>
-			<a href="/macros">Macros</a>
-		</nav>
-		<button class="theme-toggle" on:click={toggleTheme} aria-label="Toggle theme">
-			{$theme === 'dark' ? '☀️' : '🌙'}
-		</button>
-	</header>
+	<Header />
+	<Sidebar isOpen={sidebarOpen} />
 
 	<main>
 		<slot />
@@ -51,52 +50,6 @@
 		min-height: 100vh;
 		background-color: var(--bg-primary);
 		color: var(--text-primary);
-	}
-
-	header {
-		padding: 1rem 2rem;
-		background: var(--bg-secondary);
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		border-bottom: 1px solid var(--border-color);
-	}
-
-	.logo {
-		font-size: 1.2rem;
-		font-weight: bold;
-		color: var(--accent-color);
-	}
-
-	nav {
-		display: flex;
-		gap: 1.5rem;
-	}
-
-	nav a {
-		color: var(--text-primary);
-		text-decoration: none;
-		padding: 0.5rem;
-		border-radius: 4px;
-		transition: background-color 0.2s;
-	}
-
-	nav a:hover {
-		background-color: var(--bg-primary);
-	}
-
-	.theme-toggle {
-		background: none;
-		border: none;
-		font-size: 1.5rem;
-		cursor: pointer;
-		padding: 0.5rem;
-		border-radius: 50%;
-		transition: background-color 0.2s;
-	}
-
-	.theme-toggle:hover {
-		background-color: var(--bg-primary);
 	}
 
 	main {

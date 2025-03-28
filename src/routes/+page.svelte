@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Button } from '$lib/components';
-	import { theme } from '$lib/stores/theme';
-	import { ApiClient } from '$lib/api/client';
+	import Card from '$lib/components/ui/card.svelte';
+	import Button from '$lib/components/ui/button.svelte';
+	import { Keyboard, Layers, Lightbulb, Settings, FileJson } from 'lucide-svelte';
 
 	let configData: any = null;
 	let isLoading = true;
-	let error = null;
+	let error: Error | null = null;
 
 	onMount(async () => {
 		try {
@@ -19,57 +19,114 @@
 	});
 </script>
 
-<div class="home-container">
-	<h1>Ocho Labs</h1>
+<div class="container mx-auto px-4 py-8">
+	<h1 class="mb-8 text-3xl font-bold">Ocho Labs</h1>
 
-	<div class="dashboard">
-		{#if isLoading}
-			<div class="loading">Loading macropad information...</div>
-		{:else if error}
-			<div class="error">
-				<p>Error connecting to macropad: {error.message}</p>
-				<p>Make sure your macropad is connected and try again.</p>
+	<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+		<Card class="flex flex-col">
+			<div class="mb-4 flex items-center">
+				<Keyboard class="text-accent-color mr-3 h-6 w-6" />
+				<h2 class="text-xl font-semibold">Macropad Status</h2>
 			</div>
-		{:else}
-			<div class="macropad-info">
-				<h2>Welcome to your Macropad Control Panel</h2>
-				<p>Use this interface to configure your macropad's buttons, encoders, and display.</p>
-
-				<div class="status-panel">
-					<div class="status-item">
-						<h3>Device Information</h3>
-						<ul>
-							<li><strong>Macropad Name:</strong> {configData?.name || 'Unknown'}</li>
-							<li><strong>Firmware Version:</strong> {configData?.version || 'Unknown'}</li>
-							<li><strong>Status:</strong> Connected</li>
-						</ul>
+			<div class="flex-1">
+				<p class="text-text-secondary mb-4">
+					View and manage your macropad device status, connection, and information.
+				</p>
+				<div class="bg-bg-secondary mb-4 space-y-2 rounded-md p-4">
+					<div class="flex justify-between">
+						<span>Connection</span>
+						<span class="text-green-500">Connected</span>
 					</div>
-
-					<div class="status-item">
-						<h3>Quick Stats</h3>
-						<ul>
-							<li><strong>Buttons:</strong> {configData?.buttons?.length || 0} configured</li>
-							<li><strong>Encoders:</strong> {configData?.encoders?.length || 0} configured</li>
-							<li><strong>Macros:</strong> {configData?.macros?.length || 0} available</li>
-						</ul>
+					<div class="flex justify-between">
+						<span>Firmware Version</span>
+						<span>v1.2.3</span>
+					</div>
+					<div class="flex justify-between">
+						<span>Battery</span>
+						<span>82%</span>
 					</div>
 				</div>
 			</div>
+			<Button href="/settings" variant="ghost" class="mt-auto w-full">Device Settings</Button>
+		</Card>
 
-			<div class="quick-actions">
-				<h3>Quick Actions</h3>
-				<div class="action-buttons">
-					<a href="/config" class="action-button">
-						<span class="icon">⚙️</span>
-						<span>Configure Layout</span>
-					</a>
-					<a href="/macros" class="action-button">
-						<span class="icon">🔄</span>
-						<span>Edit Macros</span>
-					</a>
+		<Card class="flex flex-col">
+			<div class="mb-4 flex items-center">
+				<Layers class="text-accent-color mr-3 h-6 w-6" />
+				<h2 class="text-xl font-semibold">Macros</h2>
+			</div>
+			<div class="flex-1">
+				<p class="text-text-secondary mb-4">
+					Configure key mappings, macros, and shortcuts for your macropad.
+				</p>
+				<div class="bg-bg-secondary mb-4 space-y-2 rounded-md p-4">
+					<div class="flex justify-between">
+						<span>Active Profile</span>
+						<span>Default</span>
+					</div>
+					<div class="flex justify-between">
+						<span>Configured Keys</span>
+						<span>12/16</span>
+					</div>
+					<div class="flex justify-between">
+						<span>Saved Profiles</span>
+						<span>3</span>
+					</div>
 				</div>
 			</div>
-		{/if}
+			<Button href="/macros" variant="ghost" class="mt-auto w-full">Edit Macros</Button>
+		</Card>
+
+		<Card class="flex flex-col">
+			<div class="mb-4 flex items-center">
+				<Lightbulb class="text-accent-color mr-3 h-6 w-6" />
+				<h2 class="text-xl font-semibold">Lighting</h2>
+			</div>
+			<div class="flex-1">
+				<p class="text-text-secondary mb-4">
+					Customize LED colors, brightness, and patterns for your macropad.
+				</p>
+				<div class="bg-bg-secondary mb-4 space-y-2 rounded-md p-4">
+					<div class="flex justify-between">
+						<span>Current Mode</span>
+						<span>Rainbow</span>
+					</div>
+					<div class="flex justify-between">
+						<span>Brightness</span>
+						<span>75%</span>
+					</div>
+					<div class="flex justify-between">
+						<span>Per-key Color</span>
+						<span>Disabled</span>
+					</div>
+				</div>
+			</div>
+			<Button href="/lighting" variant="ghost" class="mt-auto w-full">Configure Lighting</Button>
+		</Card>
+	</div>
+
+	<div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+		<Card>
+			<div class="mb-4 flex items-center">
+				<Settings class="text-accent-color mr-3 h-6 w-6" />
+				<h2 class="text-xl font-semibold">Settings</h2>
+			</div>
+			<p class="text-text-secondary mb-4">
+				Configure device settings, firmware updates, and connection options.
+			</p>
+			<Button href="/settings" variant="ghost">Settings</Button>
+		</Card>
+
+		<Card>
+			<div class="mb-4 flex items-center">
+				<FileJson class="text-accent-color mr-3 h-6 w-6" />
+				<h2 class="text-xl font-semibold">Raw Configurations</h2>
+			</div>
+			<p class="text-text-secondary mb-4">
+				View and edit raw JSON configuration for advanced users.
+			</p>
+			<Button href="/config" variant="ghost">Edit Configurations</Button>
+		</Card>
 	</div>
 </div>
 
