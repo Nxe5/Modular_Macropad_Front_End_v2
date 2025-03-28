@@ -1,0 +1,52 @@
+{
+	"id": "iterm_hello_world",
+	"name": "iTerm Hello World",
+	"description": "Opens iTerm and types 'Hello, World!'",
+	"sequence": [
+		{
+			"type": "keypress",
+			"value": "space",
+			"modifiers": ["meta"]
+		},
+		{
+			"type": "delay",
+			"value": 500
+		},
+		{
+			"type": "text",
+			"value": "iterm"
+		},
+		{
+			"type": "delay",
+			"value": 300
+		},
+		{
+			"type": "keypress",
+			"value": "return"
+		},
+		{
+			"type": "delay",
+			"value": 1000
+		},
+		{
+			"type": "text",
+			"value": "echo 'Hello, World!'"
+		},
+		{
+			"type": "keypress",
+			"value": "return"
+		},
+		{
+			"type": "delay",
+			"value": 500
+		},
+		{
+			"type": "text",
+			"value": "exit"
+		},
+		{
+			"type": "keypress",
+			"value": "return"
+		}
+	]
+}
