@@ -15,7 +15,7 @@
 	</main>
 
 	<footer class="footer">
-		<div class="container">Ocho Labs Macropad Configuration Tool</div>
+		<div class="container">Ocho Labs Snap3r Configuration Tool</div>
 	</footer>
 </div>
 
