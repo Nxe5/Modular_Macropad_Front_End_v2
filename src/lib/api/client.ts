@@ -1,36 +1,119 @@
 import type { MacropadConfig } from '$lib/types/config';
 import type { Macro } from '$lib/types/macro';
 import { API_ENDPOINTS } from './endpoints';
+import { updateConnectionStatus } from '$lib/stores/connection';
 
-// TODO: Replace with actual ESP32 IP when deploying
+// Base URL for API requests
 const API_BASE_URL = 'http://localhost:8080';
 
+// Default request timeout in milliseconds
+const DEFAULT_TIMEOUT = 5000;
+
 /**
- * API client for communicating with the ESP32 macropad
+ * Base API client class for making HTTP requests to the macropad
  */
 export class ApiClient {
 	/**
-	 * Generic request method for API calls
+	 * Make a request to the macropad API
+	 * @param endpoint The API endpoint to request
+	 * @param options Fetch options
+	 * @returns Promise with the response data
 	 */
-	private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+	static async request<T>(
+		endpoint: string,
+		options: RequestInit = {},
+		timeout: number = DEFAULT_TIMEOUT
+	): Promise<T> {
+		const url = `${API_BASE_URL}${endpoint}`;
+
+		// Create abort controller for timeout
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), timeout);
+
 		try {
-			const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+			updateConnectionStatus('connecting');
+
+			const response = await fetch(url, {
 				...options,
 				headers: {
 					'Content-Type': 'application/json',
 					...options.headers
-				}
+				},
+				signal: controller.signal
 			});
 
+			clearTimeout(timeoutId);
+
 			if (!response.ok) {
-				throw new Error(`API Error: ${response.statusText}`);
+				const errorText = await response.text();
+				updateConnectionStatus('disconnected', `${response.status}: ${errorText}`);
+				throw new Error(`API Error: ${response.status} ${response.statusText}\n${errorText}`);
 			}
 
-			return response.json();
+			updateConnectionStatus('connected');
+
+			// Return empty object for 204 No Content responses
+			if (response.status === 204) {
+				return {} as T;
+			}
+
+			return await response.json();
 		} catch (error) {
-			console.error('API request failed:', error);
+			clearTimeout(timeoutId);
+
+			if (error instanceof DOMException && error.name === 'AbortError') {
+				updateConnectionStatus('disconnected', 'Request timeout');
+				throw new Error(`Request timeout: ${url}`);
+			}
+
+			updateConnectionStatus(
+				'disconnected',
+				error instanceof Error ? error.message : 'Unknown error'
+			);
 			throw error;
 		}
+	}
+
+	/**
+	 * Make a GET request to the API
+	 */
+	static async get<T>(endpoint: string, timeout?: number): Promise<T> {
+		return this.request<T>(endpoint, { method: 'GET' }, timeout);
+	}
+
+	/**
+	 * Make a POST request to the API
+	 */
+	static async post<T>(endpoint: string, data: any, timeout?: number): Promise<T> {
+		return this.request<T>(
+			endpoint,
+			{
+				method: 'POST',
+				body: JSON.stringify(data)
+			},
+			timeout
+		);
+	}
+
+	/**
+	 * Make a PUT request to the API
+	 */
+	static async put<T>(endpoint: string, data: any, timeout?: number): Promise<T> {
+		return this.request<T>(
+			endpoint,
+			{
+				method: 'PUT',
+				body: JSON.stringify(data)
+			},
+			timeout
+		);
+	}
+
+	/**
+	 * Make a DELETE request to the API
+	 */
+	static async delete<T>(endpoint: string, timeout?: number): Promise<T> {
+		return this.request<T>(endpoint, { method: 'DELETE' }, timeout);
 	}
 
 	/**
