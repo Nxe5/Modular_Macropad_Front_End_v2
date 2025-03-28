@@ -1,13 +1,14 @@
 <script lang="ts">
+	import { WifiOff, Wifi } from 'lucide-svelte';
 	export let connected = false;
 </script>
 
 <div class="flex items-center">
-	<span
-		class="mr-2 h-2.5 w-2.5 rounded-full {connected ? 'bg-green-500' : 'bg-red-500'}"
-		aria-hidden="true"
-	></span>
-	<span class="text-text-secondary text-sm">
-		{connected ? 'Connected' : 'Disconnected'}
-	</span>
+	{#if connected}
+		<Wifi class="mr-2 h-4 w-4 text-green-500" />
+		<span class="text-text-secondary text-sm">Connected</span>
+	{:else}
+		<WifiOff class="mr-2 h-4 w-4 text-red-500" />
+		<span class="text-text-secondary text-sm">Disconnected</span>
+	{/if}
 </div>

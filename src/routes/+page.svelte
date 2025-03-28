@@ -20,7 +20,7 @@
 </script>
 
 <div class="home-container">
-	<h1>Macropad Configuration</h1>
+	<h1>Ocho Labs</h1>
 
 	<div class="dashboard">
 		{#if isLoading}

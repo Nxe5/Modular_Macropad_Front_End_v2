@@ -37,12 +37,12 @@
 	}
 
 	:global(:root[data-theme='dark']) {
-		--bg-primary: #1a1a1a;
-		--bg-secondary: #2d2d2d;
-		--text-primary: #ffffff;
-		--text-secondary: #b3b3b3;
-		--accent-color: #64b5f6;
-		--border-color: #404040;
+		--bg-primary: #111827;
+		--bg-secondary: #1f2937;
+		--text-primary: #f9fafb;
+		--text-secondary: #9ca3af;
+		--accent-color: #60a5fa;
+		--border-color: #374151;
 	}
 
 	.app {
