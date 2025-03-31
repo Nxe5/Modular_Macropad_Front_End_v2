@@ -11,8 +11,9 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"build-firmware": "vite build && rm -rf ../Modular_Macropad_Firmware/data/web/* && cp -r build/* ../Modular_Macropad_Firmware/data/web/",
-		"lint": "prettier --check . && eslint ."
+		"build-minimal": "node build-minimal.js",
+		"lint": "prettier --check . && eslint .",
+		"build-firmware": "vite build && rm -rf ../Modular_Macropad_Firmware/data/web/* && cp -r build/* ../Modular_Macropad_Firmware/data/web/"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
