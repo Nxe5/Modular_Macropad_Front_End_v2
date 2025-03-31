@@ -3,17 +3,17 @@
  */
 export const API_ENDPOINTS = {
 	CONFIG: {
-		COMPONENTS: '/config/components',
-		ACTIONS: '/config/actions',
-		EXAMPLE: '/config/example',
-		INFO: '/config/info',
-		LEDS: '/config/leds',
-		REPORTS: '/config/reports',
-		DISPLAY: '/config/display'
+		COMPONENTS: '/api/config/components',
+		ACTIONS: '/api/config/actions',
+		EXAMPLE: '/api/config/example',
+		INFO: '/api/config/info',
+		LEDS: '/api/config/leds',
+		REPORTS: '/api/config/reports',
+		DISPLAY: '/api/config/display'
 	},
 	MACROS: {
-		GET: (name: string) => `/macros/${name}`,
-		LIST: '/macros'
+		GET: (name: string) => `/api/macros/${name}`,
+		LIST: '/api/macros'
 	}
 };
 

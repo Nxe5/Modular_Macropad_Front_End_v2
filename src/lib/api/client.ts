@@ -3,8 +3,8 @@ import type { Macro } from '$lib/types/macro';
 import { API_ENDPOINTS } from './endpoints';
 import { updateConnectionStatus } from '$lib/stores/connection';
 
-// Base URL for API requests
-const API_BASE_URL = 'http://localhost:8080';
+// Base URL for API requests - using relative URLs will make it work with any host
+const API_BASE_URL = '';
 
 // Default request timeout in milliseconds
 const DEFAULT_TIMEOUT = 5000;
