@@ -84,14 +84,31 @@ export class ApiClient {
 	/**
 	 * Make a POST request to the API
 	 */
-	static async post<T>(endpoint: string, data: any, timeout?: number): Promise<T> {
+	static async post<T>(
+		endpoint: string,
+		data: any,
+		options: {
+			timeout?: number;
+			params?: Record<string, string>;
+		} = {}
+	): Promise<T> {
+		// Add query parameters if provided
+		let url = endpoint;
+		if (options.params) {
+			const queryParams = new URLSearchParams();
+			Object.entries(options.params).forEach(([key, value]) => {
+				queryParams.append(key, value);
+			});
+			url += `?${queryParams.toString()}`;
+		}
+
 		return this.request<T>(
-			endpoint,
+			url,
 			{
 				method: 'POST',
-				body: JSON.stringify(data)
+				body: data ? JSON.stringify(data) : null
 			},
-			timeout
+			options.timeout
 		);
 	}
 

@@ -36,7 +36,7 @@ The page includes five tabs for different configuration sections:
 
    - Purpose: LED lighting configurations and effects
    - Icon: Lightbulb icon
-   - Data file: `/mock-data/config/LEDs.json`
+   - Data file: `/mock-data/config/leds.json`
 
 5. **Reports**
    - Purpose: Device reporting and notification settings

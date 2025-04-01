@@ -117,4 +117,13 @@ export class ConfigApi {
 	) {
 		return ApiClient.post(`/api/components/${componentId}/encoder-actions`, data);
 	}
+
+	/**
+	 * Restore config from defaults
+	 */
+	static async restoreConfig(configName: string) {
+		return ApiClient.post('/api/config/restore', null, {
+			params: { config: configName }
+		});
+	}
 }

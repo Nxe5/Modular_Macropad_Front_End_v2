@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Info, Cpu, Play, Lightbulb, FileText, Download, Save, RefreshCw } from 'lucide-svelte';
+	import { Info, Cpu, Play, Lightbulb, FileText, Download, Save, RefreshCw, RotateCcw } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { ConfigApi } from '$lib/api/config';
 	import { updateConnectionStatus } from '$lib/stores/connection';
@@ -160,6 +160,32 @@
 		await fetchTabData(activeTab);
 	}
 
+	// Function to restore configuration to defaults
+	async function restoreConfig(tab: string) {
+		if (!confirm(`Are you sure you want to restore the ${tab} configuration to defaults? This will overwrite your current settings.`)) {
+			return;
+		}
+		
+		loading[tab] = true;
+		errors[tab] = null;
+		
+		try {
+			// Call the API to restore the configuration
+			await ConfigApi.restoreConfig(tab);
+			
+			// Fetch the updated configuration
+			await fetchTabData(tab);
+			
+			// Show success message
+			alert(`${tab.charAt(0).toUpperCase() + tab.slice(1)} configuration restored successfully!`);
+		} catch (error) {
+			console.error(`Error restoring ${tab} configuration:`, error);
+			errors[tab] = error instanceof Error ? error.message : 'Unknown error';
+		} finally {
+			loading[tab] = false;
+		}
+	}
+
 	onMount(async () => {
 		// Fetch data for the initial tab
 		await fetchTabData(activeTab);
@@ -223,6 +249,10 @@
 								<Download size={16} />
 								<span>Download</span>
 							</button>
+							<button class="action-button" on:click={() => restoreConfig('info')} disabled={loading.info}>
+								<RotateCcw size={16} />
+								<span>Restore</span>
+							</button>
 						</div>
 					</div>
 					<p>Basic information about your macropad.</p>
@@ -262,6 +292,10 @@
 								<Download size={16} />
 								<span>Download</span>
 							</button>
+							<button class="action-button" on:click={() => restoreConfig('components')} disabled={loading.components}>
+								<RotateCcw size={16} />
+								<span>Restore</span>
+							</button>
 						</div>
 					</div>
 					<p>Configure the hardware components of your macropad.</p>
@@ -299,6 +333,10 @@
 							<button class="action-button" on:click={() => downloadConfig('actions')} disabled={loading.actions}>
 								<Download size={16} />
 								<span>Download</span>
+							</button>
+							<button class="action-button" on:click={() => restoreConfig('actions')} disabled={loading.actions}>
+								<RotateCcw size={16} />
+								<span>Restore</span>
 							</button>
 						</div>
 					</div>
@@ -338,6 +376,10 @@
 								<Download size={16} />
 								<span>Download</span>
 							</button>
+							<button class="action-button" on:click={() => restoreConfig('leds')} disabled={loading.leds}>
+								<RotateCcw size={16} />
+								<span>Restore</span>
+							</button>
 						</div>
 					</div>
 					<p>Configure the LED settings for your macropad.</p>
@@ -371,6 +413,10 @@
 							<button class="action-button" on:click={() => downloadConfig('reports')} disabled={loading.reports}>
 								<Download size={16} />
 								<span>Download</span>
+							</button>
+							<button class="action-button" on:click={() => restoreConfig('reports')} disabled={loading.reports}>
+								<RotateCcw size={16} />
+								<span>Restore</span>
 							</button>
 						</div>
 					</div>

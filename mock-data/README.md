@@ -8,7 +8,7 @@ This directory contains JSON mock data files used for development and testing of
   - `info.json`: Basic device information and settings
   - `components.json`: Hardware components configuration
   - `actions.json`: Key mappings and action definitions
-  - `LEDs.json`: LED configuration and effects
+  - `leds.json`: LED configuration and effects
   - `reports.json`: Device reporting settings
   - `example.json`: Example configuration template
 - `/macros/`: Sample macro configurations
@@ -70,7 +70,7 @@ Maps physical inputs to actions:
 - Encoder press actions
 - Layer switches
 
-#### LEDs (`LEDs.json`)
+#### LEDs (`leds.json`)
 
 Configures the RGB lighting:
 
