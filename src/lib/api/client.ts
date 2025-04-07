@@ -240,7 +240,7 @@ export class ApiClient {
 	 * Create or update a macro
 	 */
 	static async saveMacro(name: string, data: any) {
-		return this.request(API_ENDPOINTS.MACROS.GET(name), {
+		return this.request(API_ENDPOINTS.MACROS.CREATE, {
 			method: 'POST',
 			body: JSON.stringify(data)
 		});

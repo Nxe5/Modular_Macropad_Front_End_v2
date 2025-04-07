@@ -13,7 +13,8 @@ export const API_ENDPOINTS = {
 	},
 	MACROS: {
 		GET: (name: string) => `/api/macros/${name}`,
-		LIST: '/api/macros'
+		LIST: '/api/macros',
+		CREATE: '/api/macros'
 	}
 };
 

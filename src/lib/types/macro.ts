@@ -2,7 +2,12 @@ export interface Macro {
 	id: string;
 	name: string;
 	description: string;
-	sequence: MacroStep[];
+	commands: MacroCommand[];
+}
+
+export interface MacroCommand {
+	type: string;
+	[key: string]: any;
 }
 
 export interface MacroStep {
