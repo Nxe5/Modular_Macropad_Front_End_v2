@@ -1,13 +1,15 @@
 <script lang="ts">
-	import { FileText, Download, Save, RefreshCw, RotateCcw, Plus } from 'lucide-svelte';
+	import { FileText, Download, Save, RefreshCw, RotateCcw, Plus, Info } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { MacrosApi } from '$lib/api/macros';
 	import { updateConnectionStatus } from '$lib/stores/connection';
+	import MacroInfoTab from './MacroInfoTab.svelte';
 
 	// Active tab state
 	let activeTab = '';
 	let macroFiles: string[] = [];
 	let macroNames: Record<string, string> = {};
+	let showInfoTab = false;
 
 	// Loading states
 	let loading = {
@@ -27,7 +29,13 @@
 	// Function to handle tab switching
 	async function switchTab(tab: string) {
 		activeTab = tab;
+		showInfoTab = false;
 		await fetchMacroContent(tab);
+	}
+	
+	// Function to toggle info tab
+	function toggleInfoTab() {
+		showInfoTab = !showInfoTab;
 	}
 	
 	// Function to fetch macro files list
@@ -45,12 +53,21 @@
 			for (const macroId of macroList) {
 				try {
 					const macro = await MacrosApi.getMacro(macroId);
-					macroNames[macroId] = macro.name || macroId;
+					// Use the macro's name if available, otherwise use a formatted version of the ID
+					macroNames[macroId] = macro.name || macroId.replace(/_/g, ' ').replace(/^(\d+)_/, '');
 				} catch (error) {
 					console.error(`Error fetching macro details for ${macroId}:`, error);
-					macroNames[macroId] = macroId;
+					// Format the ID to be more readable if name is not available
+					macroNames[macroId] = macroId.replace(/_/g, ' ').replace(/^(\d+)_/, '');
 				}
 			}
+			
+			// Sort macroFiles by name for consistent display
+			macroFiles.sort((a, b) => {
+				const nameA = macroNames[a].toLowerCase();
+				const nameB = macroNames[b].toLowerCase();
+				return nameA.localeCompare(nameB);
+			});
 			
 			// If we have files but no active tab, select the first one
 			if (macroFiles.length > 0 && !activeTab) {
@@ -83,6 +100,15 @@
 			// Check if we have the expected structure
 			if (!data.id || !data.commands) {
 				console.warn('Unexpected macro data structure:', data);
+				// Try to extract the specific macro from the response if it's a list
+				if (data.macros && Array.isArray(data.macros)) {
+					const specificMacro = data.macros.find(m => m.id === macroName);
+					if (specificMacro) {
+						console.log('Found specific macro in list:', specificMacro);
+						editedContent = JSON.stringify(specificMacro, null, 2);
+						return;
+					}
+				}
 			}
 			
 			editedContent = JSON.stringify(data, null, 2);
@@ -102,6 +128,12 @@
 		try {
 			// Parse the edited JSON
 			const parsedData = JSON.parse(editedContent);
+			
+			// Ensure the macro has the correct ID
+			if (parsedData.id !== activeTab) {
+				console.warn(`Macro ID mismatch: ${parsedData.id} !== ${activeTab}`);
+				parsedData.id = activeTab;
+			}
 			
 			// Send the updated data to the ESP32
 			await MacrosApi.saveMacro(activeTab, parsedData);
@@ -207,31 +239,51 @@
 	<h1>Raw Macros Configuration</h1>
 	<p>View and edit raw macro files for your macropad.</p>
 
-	<div class="config-tabs">
-		<nav class="config-nav">
-			{#if macroFiles.length > 0}
-				{#each macroFiles as macroFile}
-					<button
-						class={`config-tab ${activeTab === macroFile ? 'active' : ''}`}
-						on:click={() => switchTab(macroFile)}
-					>
-						<FileText size={18} />
-						<span>{macroNames[macroFile] || macroFile}</span>
-					</button>
-				{/each}
-			{:else}
-				<div class="no-macros">
-					<p>No macro files found</p>
-				</div>
-			{/if}
-			<button class="config-tab new-macro" on:click={createNewMacro}>
-				<Plus size={18} />
-				<span>New Macro</span>
+	<div class="config-layout">
+		<div class="sidebar">
+			<div class="sidebar-header">
+				<h2>Macros</h2>
+				<button class="new-macro-button" on:click={createNewMacro}>
+					<Plus size={18} />
+					<span>New</span>
+				</button>
+			</div>
+			
+			<div class="macro-list">
+				{#if loading.list}
+					<div class="loading">Loading macros...</div>
+				{:else if errors.list}
+					<div class="error">
+						<p>Error loading macros:</p>
+						<pre>{errors.list}</pre>
+					</div>
+				{:else if macroFiles.length > 0}
+					{#each macroFiles as macroFile}
+						<button
+							class={`macro-item ${activeTab === macroFile ? 'active' : ''}`}
+							on:click={() => switchTab(macroFile)}
+						>
+							<FileText size={16} />
+							<span>{macroNames[macroFile] || macroFile}</span>
+						</button>
+					{/each}
+				{:else}
+					<div class="no-macros">
+						<p>No macro files found</p>
+					</div>
+				{/if}
+			</div>
+			
+			<button class="info-button" on:click={toggleInfoTab}>
+				<Info size={18} />
+				<span>Macro Info</span>
 			</button>
-		</nav>
+		</div>
 
-		<div class="config-content">
-			{#if activeTab}
+		<div class="main-content">
+			{#if showInfoTab}
+				<MacroInfoTab />
+			{:else if activeTab}
 				<div class="tab-panel">
 					<div class="tab-header">
 						<h2>Macro: {macroNames[activeTab] || activeTab}</h2>
@@ -284,6 +336,9 @@
 <style>
 	.page-container {
 		padding: 2rem;
+		max-width: 1200px;
+		margin: 0 auto;
+		width: 100%;
 	}
 
 	h1 {
@@ -295,56 +350,118 @@
 		margin-bottom: 2rem;
 	}
 
-	.config-tabs {
+	.config-layout {
+		display: flex;
+		gap: 1rem;
+		width: 100%;
+		height: calc(100vh - 200px);
+		min-height: 500px;
+	}
+
+	.sidebar {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		width: 250px;
+		min-width: 250px;
+		border: 1px solid var(--border-color);
+		border-radius: 0.5rem;
+		overflow: hidden;
 	}
 
-	.config-nav {
+	.sidebar-header {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem;
 		border-bottom: 1px solid var(--border-color);
-		padding-bottom: 0.5rem;
 	}
 
-	.config-tab {
+	.sidebar-header h2 {
+		margin: 0;
+		font-size: 1.2rem;
+	}
+
+	.new-macro-button {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.5rem 1rem;
+		padding: 0.5rem;
+		border-radius: 0.5rem;
+		background: var(--success-color);
+		color: white;
+		border: none;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.new-macro-button:hover {
+		background: var(--success-color-hover);
+	}
+
+	.macro-list {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0.5rem;
+	}
+
+	.macro-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem;
 		border-radius: 0.5rem;
 		background: transparent;
 		color: var(--text-secondary);
 		border: none;
 		cursor: pointer;
 		transition: all 0.2s ease;
+		width: 100%;
+		text-align: left;
 	}
 
-	.config-tab:hover {
+	.macro-item:hover {
 		background: var(--bg-hover);
 		color: var(--text-primary);
 	}
 
-	.config-tab.active {
+	.macro-item.active {
 		background: var(--primary-color);
 		color: white;
 	}
 
-	.new-macro {
-		margin-left: auto;
-		background: var(--success-color);
+	.info-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.75rem;
+		border-radius: 0.5rem;
+		background: var(--primary-light);
+		color: var(--primary);
+		border: none;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		margin: 0.5rem;
+	}
+
+	.info-button:hover {
+		background: var(--primary);
 		color: white;
 	}
 
-	.new-macro:hover {
-		background: var(--success-color-hover);
+	.main-content {
+		flex: 1;
+		min-width: 0;
+		border: 1px solid var(--border-color);
+		border-radius: 0.5rem;
+		overflow: hidden;
 	}
 
 	.config-content {
 		flex: 1;
 		min-height: 400px;
+		width: 100%;
+		min-width: min(800px, 95vw);
 		border: 1px solid var(--border-color);
 		border-radius: 0.5rem;
 		overflow: hidden;
@@ -354,6 +471,7 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+		width: 100%;
 	}
 
 	.tab-header {
@@ -384,6 +502,11 @@
 
 	.action-button:hover {
 		background: var(--bg-hover);
+	}
+
+	.action-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.action-button.primary {
@@ -462,5 +585,15 @@
 		to {
 			transform: rotate(360deg);
 		}
+	}
+
+	.info-tab {
+		background-color: var(--primary-light);
+		color: var(--primary);
+	}
+	
+	.info-tab:hover {
+		background-color: var(--primary);
+		color: white;
 	}
 </style>

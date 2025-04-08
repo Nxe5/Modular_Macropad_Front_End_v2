@@ -4,18 +4,12 @@
 	import { ConfigApi } from '$lib/api/config';
 	import { updateConnectionStatus } from '$lib/stores/connection';
 
-	// Active tab state
-	let activeTab = 'info';
-
-	// Configuration data
-	let infoData: any = null;
-	let componentsData: any = null;
-	let actionsData: any = null;
-	let ledsData: any = null;
-	let reportsData: any = null;
+	type TabId = 'info' | 'components' | 'actions' | 'leds' | 'reports';
+	
+	let activeTab: TabId = 'info';
 	
 	// Loading states
-	let loading = {
+	let loading: Record<TabId, boolean> = {
 		info: false,
 		components: false,
 		actions: false,
@@ -24,7 +18,7 @@
 	};
 	
 	// Error states
-	let errors = {
+	let errors: Record<TabId, string | null> = {
 		info: null,
 		components: null,
 		actions: null,
@@ -32,8 +26,15 @@
 		reports: null
 	};
 	
+	// Data states
+	let infoData: any = null;
+	let componentsData: any = null;
+	let actionsData: any = null;
+	let ledsData: any = null;
+	let reportsData: any = null;
+	
 	// Edited content
-	let editedContent = {
+	let editedContent: Record<TabId, string> = {
 		info: '',
 		components: '',
 		actions: '',
@@ -43,7 +44,7 @@
 
 	// Function to handle tab switching
 	async function switchTab(tab: string) {
-		activeTab = tab;
+		activeTab = tab as TabId;
 		if (!getTabData(tab)) {
 			await fetchTabData(tab);
 		}
@@ -63,8 +64,8 @@
 	
 	// Function to fetch data for a tab
 	async function fetchTabData(tab: string) {
-		loading[tab] = true;
-		errors[tab] = null;
+		loading[tab as TabId] = true;
+		errors[tab as TabId] = null;
 		
 		try {
 			let data;
@@ -97,20 +98,20 @@
 			}
 		} catch (error) {
 			console.error(`Error fetching ${tab} data:`, error);
-			errors[tab] = error instanceof Error ? error.message : 'Unknown error';
+			errors[tab as TabId] = error instanceof Error ? error.message : 'Unknown error';
 		} finally {
-			loading[tab] = false;
+			loading[tab as TabId] = false;
 		}
 	}
 	
 	// Function to save edited data
 	async function saveConfig(tab: string) {
-		loading[tab] = true;
-		errors[tab] = null;
+		loading[tab as TabId] = true;
+		errors[tab as TabId] = null;
 		
 		try {
 			// Parse the edited JSON
-			const parsedData = JSON.parse(editedContent[tab]);
+			const parsedData = JSON.parse(editedContent[tab as TabId]);
 			
 			// Send the updated data to the ESP32
 			switch (tab) {
@@ -132,18 +133,18 @@
 			alert(`${tab.charAt(0).toUpperCase() + tab.slice(1)} configuration saved successfully!`);
 		} catch (error) {
 			console.error(`Error saving ${tab} data:`, error);
-			errors[tab] = error instanceof Error ? error.message : 'Unknown error';
+			errors[tab as TabId] = error instanceof Error ? error.message : 'Unknown error';
 			if (error instanceof SyntaxError) {
-				errors[tab] = "Invalid JSON format: " + error.message;
+				errors[tab as TabId] = "Invalid JSON format: " + error.message;
 			}
 		} finally {
-			loading[tab] = false;
+			loading[tab as TabId] = false;
 		}
 	}
 	
 	// Function to download configuration
 	function downloadConfig(tab: string) {
-		const content = editedContent[tab];
+		const content = editedContent[tab as TabId];
 		const blob = new Blob([content], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
@@ -166,8 +167,8 @@
 			return;
 		}
 		
-		loading[tab] = true;
-		errors[tab] = null;
+		loading[tab as TabId] = true;
+		errors[tab as TabId] = null;
 		
 		try {
 			// Call the API to restore the configuration
@@ -180,9 +181,9 @@
 			alert(`${tab.charAt(0).toUpperCase() + tab.slice(1)} configuration restored successfully!`);
 		} catch (error) {
 			console.error(`Error restoring ${tab} configuration:`, error);
-			errors[tab] = error instanceof Error ? error.message : 'Unknown error';
+			errors[tab as TabId] = error instanceof Error ? error.message : 'Unknown error';
 		} finally {
-			loading[tab] = false;
+			loading[tab as TabId] = false;
 		}
 	}
 
@@ -196,46 +197,52 @@
 	<h1>Raw Configuration</h1>
 	<p>View and edit raw configuration files for your macropad.</p>
 
-	<div class="config-tabs">
-		<nav class="config-nav">
-			<button
-				class={`config-tab ${activeTab === 'info' ? 'active' : ''}`}
-				on:click={() => switchTab('info')}
-			>
-				<Info size={18} />
-				<span>Info</span>
-			</button>
-			<button
-				class={`config-tab ${activeTab === 'components' ? 'active' : ''}`}
-				on:click={() => switchTab('components')}
-			>
-				<Cpu size={18} />
-				<span>Components</span>
-			</button>
-			<button
-				class={`config-tab ${activeTab === 'actions' ? 'active' : ''}`}
-				on:click={() => switchTab('actions')}
-			>
-				<Play size={18} />
-				<span>Actions</span>
-			</button>
-			<button
-				class={`config-tab ${activeTab === 'leds' ? 'active' : ''}`}
-				on:click={() => switchTab('leds')}
-			>
-				<Lightbulb size={18} />
-				<span>LEDs</span>
-			</button>
-			<button
-				class={`config-tab ${activeTab === 'reports' ? 'active' : ''}`}
-				on:click={() => switchTab('reports')}
-			>
-				<FileText size={18} />
-				<span>Reports</span>
-			</button>
-		</nav>
+	<div class="config-layout">
+		<div class="sidebar">
+			<div class="sidebar-header">
+				<h2>Configuration</h2>
+			</div>
+			
+			<div class="tab-list">
+				<button
+					class={`tab-item ${activeTab === 'info' ? 'active' : ''}`}
+					on:click={() => switchTab('info')}
+				>
+					<Info size={16} />
+					<span>Info</span>
+				</button>
+				<button
+					class={`tab-item ${activeTab === 'components' ? 'active' : ''}`}
+					on:click={() => switchTab('components')}
+				>
+					<Cpu size={16} />
+					<span>Components</span>
+				</button>
+				<button
+					class={`tab-item ${activeTab === 'actions' ? 'active' : ''}`}
+					on:click={() => switchTab('actions')}
+				>
+					<Play size={16} />
+					<span>Actions</span>
+				</button>
+				<button
+					class={`tab-item ${activeTab === 'leds' ? 'active' : ''}`}
+					on:click={() => switchTab('leds')}
+				>
+					<Lightbulb size={16} />
+					<span>LEDs</span>
+				</button>
+				<button
+					class={`tab-item ${activeTab === 'reports' ? 'active' : ''}`}
+					on:click={() => switchTab('reports')}
+				>
+					<FileText size={16} />
+					<span>Reports</span>
+				</button>
+			</div>
+		</div>
 
-		<div class="config-content">
+		<div class="main-content">
 			{#if activeTab === 'info'}
 				<div class="tab-panel">
 					<div class="tab-header">
@@ -448,10 +455,13 @@
 <style>
 	.page-container {
 		padding: 2rem;
+		max-width: 1200px;
+		margin: 0 auto;
+		width: 100%;
 	}
 
 	h1 {
-		margin-bottom: 1rem;
+		margin-bottom: 0.5rem;
 	}
 
 	p {
@@ -459,147 +469,174 @@
 		margin-bottom: 2rem;
 	}
 
-	.config-tabs {
-		margin-top: 2rem;
+	.config-layout {
+		display: flex;
+		gap: 1rem;
+		width: 100%;
+		height: calc(100vh - 200px);
+		min-height: 500px;
+	}
+
+	.sidebar {
+		display: flex;
+		flex-direction: column;
+		width: 250px;
+		min-width: 250px;
 		border: 1px solid var(--border-color);
 		border-radius: 0.5rem;
 		overflow: hidden;
 	}
 
-	.config-nav {
+	.sidebar-header {
 		display: flex;
-		background-color: var(--bg-secondary);
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem;
 		border-bottom: 1px solid var(--border-color);
-		overflow-x: auto;
 	}
 
-	.config-tab {
+	.sidebar-header h2 {
+		margin: 0;
+		font-size: 1.2rem;
+	}
+
+	.tab-list {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0.5rem;
+	}
+
+	.tab-item {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.75rem 1.25rem;
+		padding: 0.75rem;
+		border-radius: 0.5rem;
+		background: transparent;
 		color: var(--text-secondary);
-		cursor: pointer;
 		border: none;
-		background: none;
-		transition: background-color 0.2s;
-		white-space: nowrap;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		width: 100%;
+		text-align: left;
 	}
 
-	.config-tab:hover {
-		background-color: rgba(0, 0, 0, 0.05);
+	.tab-item:hover {
+		background: var(--bg-hover);
+		color: var(--text-primary);
 	}
 
-	.config-tab.active {
-		color: var(--accent-color);
-		border-bottom: 2px solid var(--accent-color);
-		background-color: var(--bg-primary);
+	.tab-item.active {
+		background: var(--primary-color);
+		color: white;
 	}
 
-	.config-content {
-		padding: 2rem;
-		background-color: var(--bg-primary);
+	.main-content {
+		flex: 1;
+		min-width: 0;
+		border: 1px solid var(--border-color);
+		border-radius: 0.5rem;
+		overflow: hidden;
 	}
 
-	.tab-panel h2 {
-		margin-bottom: 1rem;
+	.tab-panel {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		width: 100%;
 	}
 
-	.tab-panel p {
-		margin-bottom: 1.5rem;
-	}
-	
 	.tab-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 1rem;
+		padding: 1rem;
+		border-bottom: 1px solid var(--border-color);
 	}
-	
+
 	.tab-actions {
 		display: flex;
 		gap: 0.5rem;
 	}
-	
+
 	.action-button {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
-		background-color: var(--accent-color);
-		color: white;
-		border: none;
-		border-radius: 0.25rem;
+		border-radius: 0.5rem;
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		border: 1px solid var(--border-color);
 		cursor: pointer;
-		transition: background-color 0.2s;
+		transition: all 0.2s ease;
 	}
-	
+
 	.action-button:hover {
-		background-color: var(--accent-color-dark);
+		background: var(--bg-hover);
 	}
-	
+
 	.action-button:disabled {
-		background-color: var(--bg-disabled);
+		opacity: 0.5;
 		cursor: not-allowed;
 	}
-	
+
 	.json-editor {
-		width: 100%;
-		margin-top: 1rem;
+		flex: 1;
+		padding: 1rem;
+		overflow: auto;
 	}
-	
+
 	.json-editor textarea {
 		width: 100%;
+		height: 100%;
+		min-height: 300px;
 		font-family: monospace;
+		font-size: 14px;
+		line-height: 1.5;
 		padding: 1rem;
 		border: 1px solid var(--border-color);
-		border-radius: 0.25rem;
-		background-color: var(--bg-secondary);
+		border-radius: 0.5rem;
+		background: var(--bg-secondary);
 		color: var(--text-primary);
-		resize: vertical;
+		resize: none;
 	}
-	
-	.loading {
+
+	.loading, .error {
 		display: flex;
 		justify-content: center;
+		align-items: center;
+		height: 100%;
 		padding: 2rem;
-		color: var(--text-secondary);
+		text-align: center;
 	}
-	
+
 	.error {
-		padding: 1rem;
-		border: 1px solid var(--error-color);
-		border-radius: 0.25rem;
-		background-color: var(--error-bg);
-		color: var(--error-color);
-		margin-top: 1rem;
+		color: var(--danger-color);
+		flex-direction: column;
+		align-items: flex-start;
 	}
-	
+
 	.error button {
-		margin-top: 0.5rem;
-		padding: 0.25rem 0.5rem;
-		background-color: var(--error-color);
+		margin-top: 1rem;
+		padding: 0.5rem 1rem;
+		border-radius: 0.5rem;
+		background: var(--primary-color);
 		color: white;
 		border: none;
-		border-radius: 0.25rem;
 		cursor: pointer;
 	}
-	
+
 	.spinning {
 		animation: spin 1s linear infinite;
 	}
-	
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
-	}
 
-	/* Dark mode adjustments */
-	:global([data-theme='dark']) .config-tab:hover {
-		background-color: rgba(255, 255, 255, 0.05);
-	}
-	
-	:global([data-theme='dark']) .json-editor textarea {
-		background-color: rgba(0, 0, 0, 0.3);
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>
