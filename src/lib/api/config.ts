@@ -84,41 +84,6 @@ export class ConfigApi {
 	}
 
 	/**
-	 * Get component action by ID
-	 */
-	static async getComponentAction(componentId: string) {
-		return ApiClient.get(`/api/components/${componentId}/action`);
-	}
-
-	/**
-	 * Update component action by ID
-	 */
-	static async updateComponentAction(
-		componentId: string,
-		data: {
-			type: string;
-			action: string;
-			params?: Record<string, any>;
-		}
-	) {
-		return ApiClient.post(`/api/components/${componentId}/action`, data);
-	}
-
-	/**
-	 * Update encoder component actions
-	 */
-	static async updateEncoderActions(
-		componentId: string,
-		data: {
-			clockwise?: { type: string; action: string; params?: Record<string, any> };
-			counterClockwise?: { type: string; action: string; params?: Record<string, any> };
-			buttonPress?: { type: string; action: string; params?: Record<string, any> };
-		}
-	) {
-		return ApiClient.post(`/api/components/${componentId}/encoder-actions`, data);
-	}
-
-	/**
 	 * Restore config from defaults
 	 */
 	static async restoreConfig(configName: string) {
