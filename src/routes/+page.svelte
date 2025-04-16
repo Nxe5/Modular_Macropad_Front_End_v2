@@ -13,14 +13,16 @@
 	let loading = {
 		info: false,
 		actions: false,
-		components: false
+		components: false,
+		saving: false
 	};
 	
 	// Error states
 	let errors = {
 		info: null as string | null,
 		actions: null as string | null,
-		components: null as string | null
+		components: null as string | null,
+		saving: null as string | null
 	};
 
 	// Selected component state
@@ -41,6 +43,126 @@
 	
 	// Selected key for mapping
 	let selectedKey: string | null = null;
+	
+	// Track if bindings have been modified
+	let hasModifiedBindings: boolean = false;
+	// Store pending changes to be saved
+	let pendingChanges: Map<string, any> = new Map();
+
+	// Keyboard key to HID code mapping
+	const keyToHID: Record<string, string[]> = {
+		// Standard keyboard keys
+		'a': ['0x00', '0x00', '0x04', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'b': ['0x00', '0x00', '0x05', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'c': ['0x00', '0x00', '0x06', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'd': ['0x00', '0x00', '0x07', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'e': ['0x00', '0x00', '0x08', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f': ['0x00', '0x00', '0x09', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'g': ['0x00', '0x00', '0x0A', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'h': ['0x00', '0x00', '0x0B', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'i': ['0x00', '0x00', '0x0C', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'j': ['0x00', '0x00', '0x0D', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'k': ['0x00', '0x00', '0x0E', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'l': ['0x00', '0x00', '0x0F', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'm': ['0x00', '0x00', '0x10', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'n': ['0x00', '0x00', '0x11', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'o': ['0x00', '0x00', '0x12', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'p': ['0x00', '0x00', '0x13', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'q': ['0x00', '0x00', '0x14', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'r': ['0x00', '0x00', '0x15', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		's': ['0x00', '0x00', '0x16', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		't': ['0x00', '0x00', '0x17', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'u': ['0x00', '0x00', '0x18', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'v': ['0x00', '0x00', '0x19', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'w': ['0x00', '0x00', '0x1A', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'x': ['0x00', '0x00', '0x1B', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'y': ['0x00', '0x00', '0x1C', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'z': ['0x00', '0x00', '0x1D', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'1': ['0x00', '0x00', '0x1E', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'2': ['0x00', '0x00', '0x1F', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'3': ['0x00', '0x00', '0x20', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'4': ['0x00', '0x00', '0x21', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'5': ['0x00', '0x00', '0x22', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'6': ['0x00', '0x00', '0x23', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'7': ['0x00', '0x00', '0x24', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'8': ['0x00', '0x00', '0x25', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'9': ['0x00', '0x00', '0x26', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'0': ['0x00', '0x00', '0x27', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'enter': ['0x00', '0x00', '0x28', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'esc': ['0x00', '0x00', '0x29', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'backspace': ['0x00', '0x00', '0x2A', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'tab': ['0x00', '0x00', '0x2B', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'space': ['0x00', '0x00', '0x2C', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'-': ['0x00', '0x00', '0x2D', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'=': ['0x00', '0x00', '0x2E', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'[': ['0x00', '0x00', '0x2F', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		']': ['0x00', '0x00', '0x30', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'\\': ['0x00', '0x00', '0x31', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		';': ['0x00', '0x00', '0x33', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		"'": ['0x00', '0x00', '0x34', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'`': ['0x00', '0x00', '0x35', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		',': ['0x00', '0x00', '0x36', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'.': ['0x00', '0x00', '0x37', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'/': ['0x00', '0x00', '0x38', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'caps': ['0x00', '0x00', '0x39', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f1': ['0x00', '0x00', '0x3A', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f2': ['0x00', '0x00', '0x3B', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f3': ['0x00', '0x00', '0x3C', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f4': ['0x00', '0x00', '0x3D', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f5': ['0x00', '0x00', '0x3E', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f6': ['0x00', '0x00', '0x3F', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f7': ['0x00', '0x00', '0x40', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f8': ['0x00', '0x00', '0x41', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f9': ['0x00', '0x00', '0x42', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f10': ['0x00', '0x00', '0x43', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f11': ['0x00', '0x00', '0x44', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'f12': ['0x00', '0x00', '0x45', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'shift': ['0x02', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'ctrl': ['0x01', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'alt': ['0x04', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'win': ['0x08', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		
+		// Additional special keys for the extended tab
+		'up': ['0x00', '0x00', '0x52', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'down': ['0x00', '0x00', '0x51', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'left': ['0x00', '0x00', '0x50', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'right': ['0x00', '0x00', '0x4F', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'insert': ['0x00', '0x00', '0x49', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'home': ['0x00', '0x00', '0x4A', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'pageup': ['0x00', '0x00', '0x4B', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'delete': ['0x00', '0x00', '0x4C', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'end': ['0x00', '0x00', '0x4D', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'pagedown': ['0x00', '0x00', '0x4E', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'printscreen': ['0x00', '0x00', '0x46', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'scrolllock': ['0x00', '0x00', '0x47', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'pause': ['0x00', '0x00', '0x48', '0x00', '0x00', '0x00', '0x00', '0x00'],
+		'numlock': ['0x00', '0x00', '0x53', '0x00', '0x00', '0x00', '0x00', '0x00'],
+	};
+
+	// Multimedia keys map with consumer control codes
+	const multimediaKeys: Record<string, string[]> = {
+		'play/pause': ['0x00', '0x00', '0xCD', '0x00'],
+		'stop': ['0x00', '0x00', '0xB7', '0x00'],
+		'prev': ['0x00', '0x00', '0xB6', '0x00'],
+		'next': ['0x00', '0x00', '0xB5', '0x00'],
+		'mute': ['0x00', '0x00', '0xE2', '0x00'],
+		'vol+': ['0x00', '0x00', '0xE9', '0x00'],
+		'vol-': ['0x00', '0x00', '0xEA', '0x00'],
+		'bright+': ['0x00', '0x00', '0x6F', '0x00'],
+		'bright-': ['0x00', '0x00', '0x70', '0x00'],
+		'calculator': ['0x00', '0x00', '0x92', '0x00'],
+		'email': ['0x00', '0x00', '0x8A', '0x00'],
+		'browser': ['0x00', '0x00', '0x96', '0x00'],
+	};
+
+	// Combined keys for selection
+	const specialKeys = [
+		'up', 'down', 'left', 'right',
+		'insert', 'home', 'pageup', 'delete', 'end', 'pagedown',
+		'printscreen', 'scrolllock', 'pause', 'numlock'
+	];
+
+	const mediaKeys = Object.keys(multimediaKeys);
 
 	// Fetch all required data on mount
 	onMount(async () => {
@@ -304,10 +426,41 @@
 	}
 	
 	// Handle key selection from keyboard
-	function handleKeySelect(event: CustomEvent<{key: string}>) {
+	function handleKeySelect(event: CustomEvent<{key: string}>, keyType: 'standard' | 'multimedia' | 'special' = 'standard') {
 		selectedKey = event.detail.key;
-		console.log(`Selected key: ${selectedKey} for component: ${selectedComponent}`);
-		// Here we would update the component configuration with the selected key
+		console.log(`Selected key: ${selectedKey} for component: ${selectedComponent}, type: ${keyType}`);
+		
+		if (selectedComponent && activeLayer && selectedKey) {
+			let keyBinding: any = null;
+			
+			// Create binding configuration based on key type
+			if (keyType === 'multimedia') {
+				keyBinding = {
+					type: "multimedia",
+					buttonPress: multimediaKeys[selectedKey] || ['0x00', '0x00', '0x00', '0x00']
+				};
+			} else {
+				// Standard or special keys use HID
+				keyBinding = {
+					type: "hid",
+					buttonPress: keyToHID[selectedKey] || ['0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00']
+				};
+			}
+			
+			// Store the binding change
+			const componentKey = `${activeLayer}:${selectedComponent}`;
+			pendingChanges.set(componentKey, keyBinding);
+			pendingChanges = pendingChanges; // Trigger reactivity
+			hasModifiedBindings = true;
+			
+			console.log(`Set pending binding for ${componentKey}:`, keyBinding);
+		}
+	}
+
+	// Handle special key selection
+	function handleSpecialKeySelect(key: string, type: 'special' | 'multimedia') {
+		const eventDetail = { key };
+		handleKeySelect({ detail: eventDetail } as CustomEvent<{key: string}>, type);
 	}
 
 	// Handle layer selection
@@ -330,6 +483,76 @@
 			const binding = getComponentConfig(selectedComponent);
 			console.log(`Binding for ${selectedComponent} in layer ${layerName}:`, binding);
 		}
+	}
+
+	// Save all pending changes to the configuration
+	async function saveChanges() {
+		if (!hasModifiedBindings || !actionsData || !activeLayer) {
+			console.log('No changes to save');
+			return;
+		}
+		
+		loading.saving = true;
+		errors.saving = null;
+		
+		try {
+			console.log('Saving changes to actions configuration...');
+			
+			// Create a deep copy of the actions data
+			const updatedActions = JSON.parse(JSON.stringify(actionsData));
+			
+			// Apply all pending changes to the appropriate layer
+			for (const [key, binding] of pendingChanges.entries()) {
+				const [layerName, componentId] = key.split(':');
+				
+				// Find the layer in the actions data
+				if (updatedActions.actions && Array.isArray(updatedActions.actions.layers)) {
+					// Find the layer by name
+					const layerIndex = updatedActions.actions.layers.findIndex(
+						(layer: any) => layer['layer-name'] === layerName
+					);
+					
+					if (layerIndex >= 0) {
+						// Update the component binding in the layer
+						if (!updatedActions.actions.layers[layerIndex]['layer-config']) {
+							updatedActions.actions.layers[layerIndex]['layer-config'] = {};
+						}
+						
+						updatedActions.actions.layers[layerIndex]['layer-config'][componentId] = binding;
+						console.log(`Updated binding for ${componentId} in layer ${layerName}:`, binding);
+					}
+				}
+			}
+			
+			// Send the updated actions data to the server
+			await ConfigApi.updateActions(updatedActions);
+			console.log('Actions configuration updated successfully');
+			
+			// Refresh the actions data
+			await fetchActions();
+			
+			// Clear pending changes
+			pendingChanges.clear();
+			pendingChanges = pendingChanges; // Trigger reactivity
+			hasModifiedBindings = false;
+			
+			// Optionally clear the selected key
+			selectedKey = null;
+			
+		} catch (error) {
+			console.error('Error saving actions configuration:', error);
+			errors.saving = 'Failed to save changes';
+		} finally {
+			loading.saving = false;
+		}
+	}
+
+	// Cancel all pending changes
+	function cancelChanges() {
+		pendingChanges.clear();
+		pendingChanges = pendingChanges; // Trigger reactivity
+		hasModifiedBindings = false;
+		selectedKey = null;
 	}
 </script>
 
@@ -462,14 +685,88 @@
 							<h4>Select a key to map to this component</h4>
 							<Keyboard 
 								{selectedKey} 
-								on:keySelect={handleKeySelect} 
+								on:keySelect={(event) => handleKeySelect(event, 'standard')} 
 							/>
 						</div>
 					</div>
 				{:else if activeTab === 'extended'}
 					<div class="tab-content">
 						<h3>Extended Configuration</h3>
-						<p>Extended settings for {selectedComponentData.type}</p>
+						<div class="component-info">
+							<p><strong>Component ID:</strong> {selectedComponent}</p>
+							<p><strong>Component Type:</strong> {selectedComponentData.type}</p>
+							<p><strong>Active Layer:</strong> {activeLayer}</p>
+							
+							{#if activeLayer && actionsData}
+								{@const binding = getComponentConfig(selectedComponent)}
+								{#if binding}
+									<div class="binding-info">
+										<h4>Current Binding</h4>
+										<p><strong>Type:</strong> {binding.type}</p>
+										{#if binding.type === 'hid' && binding.buttonPress}
+											<p><strong>Key:</strong> {binding.buttonPress.join(', ')}</p>
+										{:else if binding.type === 'macro' && binding.macroId}
+											<p><strong>Macro:</strong> {binding.macroId}</p>
+										{:else if binding.type === 'multimedia'}
+											<p><strong>Button Press:</strong> {binding.buttonPress ? binding.buttonPress.join(', ') : 'None'}</p>
+										{:else if binding.type === 'cycle-layer'}
+											<p><em>This button is configured to cycle through layers</em></p>
+										{/if}
+									</div>
+								{:else}
+									<div class="binding-info">
+										<h4>Current Binding</h4>
+										<p><em>No binding configured for this component in the current layer.</em></p>
+									</div>
+								{/if}
+							{:else}
+								<div class="binding-info">
+									<h4>Current Binding</h4>
+									<p><em>No binding information available</em></p>
+								</div>
+							{/if}
+							
+							<div class="new-binding">
+								<h4>New Binding</h4>
+								{#if selectedKey}
+									<p><strong>Key:</strong> {selectedKey}</p>
+								{:else}
+									<p><em>None</em></p>
+								{/if}
+							</div>
+						</div>
+						
+						<!-- Special Navigation Keys Section -->
+						<div class="special-keys-section">
+							<h4>Navigation & Special Keys</h4>
+							<div class="special-keys-grid">
+								{#each specialKeys as key}
+									<button 
+										class="special-key"
+										class:selected={selectedKey === key}
+										on:click={() => handleSpecialKeySelect(key, 'special')}
+									>
+										{key}
+									</button>
+								{/each}
+							</div>
+						</div>
+						
+						<!-- Multimedia Keys Section -->
+						<div class="multimedia-keys-section">
+							<h4>Multimedia Controls</h4>
+							<div class="multimedia-keys-grid">
+								{#each mediaKeys as key}
+									<button 
+										class="multimedia-key"
+										class:selected={selectedKey === key}
+										on:click={() => handleSpecialKeySelect(key, 'multimedia')}
+									>
+										{key}
+									</button>
+								{/each}
+							</div>
+						</div>
 					</div>
 				{:else if activeTab === 'macros'}
 					<div class="tab-content">
@@ -499,6 +796,39 @@
 			</div>
 		{/if}
 	</section>
+
+	<!-- Save/Cancel buttons for pending changes -->
+	{#if hasModifiedBindings}
+		<section class="save-section">
+			<div class="changes-indicator">
+				<p>You have unsaved changes</p>
+				<span class="changes-count">{pendingChanges.size}</span>
+			</div>
+			<div class="action-buttons">
+				<button 
+					class="cancel-button" 
+					on:click={cancelChanges}
+					disabled={loading.saving}
+				>
+					Cancel
+				</button>
+				<button 
+					class="save-button" 
+					on:click={saveChanges}
+					disabled={loading.saving}
+				>
+					{#if loading.saving}
+						Saving...
+					{:else}
+						Save Changes
+					{/if}
+				</button>
+			</div>
+			{#if errors.saving}
+				<div class="error-message">{errors.saving}</div>
+			{/if}
+		</section>
+	{/if}
 </div>
 
 <style>
@@ -707,5 +1037,142 @@
 	
 	.load-button:hover {
 		background-color: var(--accent-color-hover, #0056b3);
+	}
+
+	.save-section {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding: 1rem;
+		margin-top: 1rem;
+		border-top: 1px solid var(--border-color);
+		background-color: var(--bg-primary);
+		border-radius: 0.5rem;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.changes-indicator {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.changes-count {
+		background-color: var(--accent-color);
+		color: white;
+		border-radius: 50%;
+		width: 24px;
+		height: 24px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.875rem;
+		font-weight: bold;
+	}
+
+	.action-buttons {
+		display: flex;
+		gap: 1rem;
+		justify-content: flex-end;
+	}
+
+	.save-button, .cancel-button {
+		padding: 0.5rem 1rem;
+		border-radius: 0.25rem;
+		border: none;
+		cursor: pointer;
+		font-weight: 500;
+	}
+
+	.save-button {
+		background-color: var(--accent-color);
+		color: white;
+	}
+
+	.save-button:hover {
+		background-color: var(--accent-color-hover, #0056b3);
+	}
+
+	.save-button:disabled {
+		background-color: #cccccc;
+		cursor: not-allowed;
+	}
+
+	.cancel-button {
+		background-color: transparent;
+		border: 1px solid var(--border-color);
+		color: var(--text-primary);
+	}
+
+	.cancel-button:hover {
+		background-color: #f0f0f0;
+	}
+
+	.cancel-button:disabled {
+		color: #888888;
+		cursor: not-allowed;
+	}
+
+	.error-message {
+		color: var(--destructive);
+		font-size: 0.875rem;
+		padding: 0.5rem;
+		background-color: rgba(255, 0, 0, 0.1);
+		border-radius: 0.25rem;
+	}
+
+	/* Extended tab styles */
+	.special-keys-section,
+	.multimedia-keys-section {
+		margin-top: 1.5rem;
+		padding: 1rem;
+		border: 1px solid var(--border-color);
+		border-radius: 0.5rem;
+		background-color: var(--bg-primary);
+	}
+
+	.special-keys-grid,
+	.multimedia-keys-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+		gap: 0.5rem;
+		margin-top: 0.5rem;
+	}
+
+	.special-key,
+	.multimedia-key {
+		padding: 0.75rem 0.5rem;
+		border: 1px solid var(--border-color);
+		border-radius: 0.25rem;
+		background-color: var(--bg-secondary);
+		color: var(--text-primary);
+		text-align: center;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+	}
+
+	.special-key:hover,
+	.multimedia-key:hover {
+		background-color: var(--accent-color);
+		color: white;
+		border-color: var(--accent-color);
+	}
+
+	.special-key.selected,
+	.multimedia-key.selected {
+		background-color: var(--accent-color);
+		color: white;
+		border-color: var(--accent-color);
+	}
+
+	/* Style differences between special and multimedia keys */
+	.special-key {
+		background-color: #f0f0f0;
+	}
+
+	.multimedia-key {
+		background-color: #e6f7ff;
 	}
 </style>
