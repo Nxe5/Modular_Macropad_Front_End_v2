@@ -3,6 +3,7 @@
 	import { ConfigApi } from '$lib/api/config';
 	import { updateConnectionStatus } from '$lib/stores/connection';
 	import Keyboard from '$lib/components/Keyboard.svelte';
+	import { EncoderConfiguration } from '$lib/components';
 
 	// Data states
 	let infoData: any = null;
@@ -43,6 +44,9 @@
 	
 	// Selected key for mapping
 	let selectedKey: string | null = null;
+	
+	// Active encoder tab (for encoder configuration)
+	let activeEncoderTab: 'clockwise' | 'counterclockwise' | 'button' = 'clockwise';
 	
 	// Track if bindings have been modified
 	let hasModifiedBindings: boolean = false;
@@ -398,19 +402,19 @@
 	function updateAvailableTabs(componentType: string | undefined) {
 		if (!componentType) return;
 		
-		// Default tabs for all components
-		availableTabs = ['basic', 'extended', 'macros'];
-		
-		// Add specific tabs based on component type
+		// Set tabs based on component type
 		switch (componentType.toLowerCase()) {
 			case 'encoder':
-				availableTabs.push('knob');
+				availableTabs = ['encoder']; // Only encoder tab for encoders
 				break;
 			case 'potentiometer':
-				availableTabs.push('fader');
+				availableTabs = ['basic', 'extended', 'macros', 'fader'];
 				break;
 			case 'display':
 				availableTabs = ['display']; // Only display tab for displays
+				break;
+			default:
+				availableTabs = ['basic', 'extended', 'macros'];
 				break;
 		}
 		
@@ -454,6 +458,114 @@
 			hasModifiedBindings = true;
 			
 			console.log(`Set pending binding for ${componentKey}:`, keyBinding);
+		}
+	}
+
+	// Handle encoder key selection
+	function handleEncoderKeySelect(event: CustomEvent<{
+		key: string;
+		action: 'clockwise' | 'counterclockwise' | 'button';
+		actionType: 'hid' | 'multimedia';
+	}>) {
+		const { key, action, actionType } = event.detail;
+		selectedKey = key;
+		
+		console.log(`Selected key: ${key} for encoder action: ${action}, type: ${actionType}, component: ${selectedComponent}`);
+		
+		if (selectedComponent && activeLayer && key) {
+			// Get current binding or create a new one
+			const componentKey = `${activeLayer}:${selectedComponent}`;
+			let currentBinding = pendingChanges.get(componentKey) || getComponentConfig(selectedComponent) || {};
+			
+			// Create a copy of the current binding to modify
+			let updatedBinding = { ...currentBinding };
+			
+			// Get the property name for the action (buttonPress for button)
+			const propName = action === 'button' ? 'buttonPress' : action;
+			
+			// Get the command array based on key type
+			const commandArray = actionType === 'multimedia' 
+				? multimediaKeys[key] || ['0x00', '0x00', '0x00', '0x00']
+				: keyToHID[key] || ['0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'];
+			
+			// Create structured format
+			updatedBinding[propName] = {
+				type: actionType,
+				command: commandArray
+			};
+			
+			// For backward compatibility with the counterclockwise property - both camelCase and lowercase
+			if (action === 'counterclockwise') {
+				updatedBinding.counterClockwise = updatedBinding.counterclockwise;
+			}
+			
+			// Store the updated binding
+			pendingChanges.set(componentKey, updatedBinding);
+			pendingChanges = pendingChanges; // Trigger reactivity
+			hasModifiedBindings = true;
+			
+			console.log(`Set pending binding for ${componentKey}:`, updatedBinding);
+		}
+	}
+
+	// Handle encoder type change
+	function handleEncoderTypeChange(event: CustomEvent<{
+		action: 'clockwise' | 'counterclockwise' | 'button';
+		actionType: 'hid' | 'multimedia';
+	}>) {
+		const { action, actionType } = event.detail;
+		
+		console.log(`Type changed for encoder action: ${action}, type: ${actionType}, component: ${selectedComponent}`);
+		
+		if (selectedComponent && activeLayer) {
+			// Get current binding or create a new one
+			const componentKey = `${activeLayer}:${selectedComponent}`;
+			let currentBinding = pendingChanges.get(componentKey) || getComponentConfig(selectedComponent) || {};
+			
+			// Create a copy of the current binding to modify
+			let updatedBinding = { ...currentBinding };
+			
+			// Get the property name for the action
+			const propName = action === 'button' ? 'buttonPress' : action;
+			
+			// If we already have a structured object for this action, update its type
+			if (updatedBinding[propName] && typeof updatedBinding[propName] === 'object') {
+				updatedBinding[propName].type = actionType;
+			} 
+			// Otherwise create a new structured object with the type
+			else {
+				// Try to get existing command value from any format
+				let existingCommand = null;
+				
+				// Check for legacy flat arrays
+				if (Array.isArray(updatedBinding[propName])) {
+					existingCommand = updatedBinding[propName];
+				} 
+				// Check for special case of counterClockwise (camelCase)
+				else if (action === 'counterclockwise' && Array.isArray(updatedBinding.counterClockwise)) {
+					existingCommand = updatedBinding.counterClockwise;
+				}
+				
+				// Create the structured format with a default empty command if no existing command
+				updatedBinding[propName] = {
+					type: actionType,
+					command: existingCommand || (actionType === 'multimedia' 
+						? ['0x00', '0x00', '0x00', '0x00']
+						: ['0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'])
+				};
+			}
+			
+			// For backward compatibility with the counterclockwise property
+			if (action === 'counterclockwise') {
+				updatedBinding.counterClockwise = updatedBinding.counterclockwise;
+			}
+			
+			// Store the updated binding
+			pendingChanges.set(componentKey, updatedBinding);
+			pendingChanges = pendingChanges; // Trigger reactivity
+			hasModifiedBindings = true;
+			
+			console.log(`Set pending binding type for ${componentKey}:`, updatedBinding);
 		}
 	}
 
@@ -773,10 +885,31 @@
 						<h3>Macros Configuration</h3>
 						<p>Configure macros for {selectedComponentData.type}</p>
 					</div>
-				{:else if activeTab === 'knob'}
+				{:else if activeTab === 'encoder' && selectedComponentData?.type === 'encoder'}
 					<div class="tab-content">
-						<h3>Knob Configuration</h3>
-						<p>Configure encoder behavior</p>
+						<h3>Encoder Configuration</h3>
+						<div class="component-info">
+							<p><strong>Component ID:</strong> {selectedComponent}</p>
+							<p><strong>Component Type:</strong> {selectedComponentData.type}</p>
+							<p><strong>Active Layer:</strong> {activeLayer}</p>
+						</div>
+						
+						{#if activeLayer && actionsData}
+							{@const binding = getComponentConfig(selectedComponent)}
+							<EncoderConfiguration 
+								{binding}
+								componentId={selectedComponent}
+								{activeLayer}
+								{selectedKey}
+								{activeEncoderTab}
+								on:keySelect={handleEncoderKeySelect}
+								on:typeChange={handleEncoderTypeChange}
+							/>
+						{:else}
+							<div class="binding-info">
+								<p><em>No binding information available</em></p>
+							</div>
+						{/if}
 					</div>
 				{:else if activeTab === 'fader'}
 					<div class="tab-content">
