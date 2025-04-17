@@ -488,10 +488,10 @@
 				? multimediaKeys[key] || ['0x00', '0x00', '0x00', '0x00']
 				: keyToHID[key] || ['0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'];
 			
-			// Create structured format
+			// Create structured format - using "report" instead of "command" for new format
 			updatedBinding[propName] = {
 				type: actionType,
-				command: commandArray
+				report: commandArray
 			};
 			
 			// For backward compatibility with the counterclockwise property - both camelCase and lowercase
@@ -549,7 +549,7 @@
 				// Create the structured format with a default empty command if no existing command
 				updatedBinding[propName] = {
 					type: actionType,
-					command: existingCommand || (actionType === 'multimedia' 
+					report: existingCommand || (actionType === 'multimedia' 
 						? ['0x00', '0x00', '0x00', '0x00']
 						: ['0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00'])
 				};

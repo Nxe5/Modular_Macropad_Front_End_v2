@@ -100,6 +100,10 @@
 			if (binding[propName].command && Array.isArray(binding[propName].command)) {
 				return binding[propName].command;
 			}
+			// New structured format (with type and report)
+			if (binding[propName].report && Array.isArray(binding[propName].report)) {
+				return binding[propName].report;
+			}
 			// Old object format but not structured (counterClockwise vs counterclockwise)
 			if (propName === 'counterclockwise' && binding.counterClockwise && Array.isArray(binding.counterClockwise)) {
 				return binding.counterClockwise;
@@ -187,21 +191,21 @@
 				{#if activeEncoderTab === 'clockwise'}
 					<p><strong>Type:</strong> {getCurrentType('clockwise') || 'Not configured'}</p>
 					{#if getCommandDisplay('clockwise')}
-						<p><strong>Command:</strong> {getCommandDisplay('clockwise')}</p>
+						<p><strong>Report:</strong> {getCommandDisplay('clockwise')}</p>
 					{:else}
 						<p><em>No binding configured for clockwise rotation</em></p>
 					{/if}
 				{:else if activeEncoderTab === 'counterclockwise'}
 					<p><strong>Type:</strong> {getCurrentType('counterclockwise') || 'Not configured'}</p>
 					{#if getCommandDisplay('counterclockwise')}
-						<p><strong>Command:</strong> {getCommandDisplay('counterclockwise')}</p>
+						<p><strong>Report:</strong> {getCommandDisplay('counterclockwise')}</p>
 					{:else}
 						<p><em>No binding configured for counter-clockwise rotation</em></p>
 					{/if}
 				{:else if activeEncoderTab === 'button'}
 					<p><strong>Type:</strong> {getCurrentType('button') || 'Not configured'}</p>
 					{#if getCommandDisplay('button')}
-						<p><strong>Command:</strong> {getCommandDisplay('button')}</p>
+						<p><strong>Report:</strong> {getCommandDisplay('button')}</p>
 					{:else}
 						<p><em>No binding configured for button press</em></p>
 					{/if}
