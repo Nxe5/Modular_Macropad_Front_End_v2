@@ -5,6 +5,9 @@
 	import Keyboard from '$lib/components/Keyboard.svelte';
 	import { EncoderConfiguration } from '$lib/components';
 
+	// Import icons
+	import { Keyboard as KeyboardIcon, Sliders, Code, RotateCw, MonitorSmartphone } from 'lucide-svelte';
+
 	// Data states
 	let infoData: any = null;
 	let actionsData: any = null;
@@ -390,10 +393,13 @@
 			
 			// Update available tabs based on component type
 			updateAvailableTabs(selectedComponentData?.type);
+			
+			// Set active tab to the first available tab for this component type
+			if (availableTabs.length > 0) {
+				activeTab = availableTabs[0];
+			}
 		}
 		
-		// Reset to basic tab when selecting a new component
-		activeTab = 'basic';
 		// Reset selected key
 		selectedKey = null;
 	}
@@ -405,7 +411,7 @@
 		// Set tabs based on component type
 		switch (componentType.toLowerCase()) {
 			case 'encoder':
-				availableTabs = ['encoder']; // Only encoder tab for encoders
+				availableTabs = ['basic', 'extended', 'macros']; // Same tabs as buttons for encoders
 				break;
 			case 'potentiometer':
 				availableTabs = ['basic', 'extended', 'macros', 'fader'];
@@ -666,33 +672,52 @@
 		hasModifiedBindings = false;
 		selectedKey = null;
 	}
+
+	// Helper function to get tab icon
+	function getTabIcon(tab: string) {
+		switch (tab) {
+			case 'basic':
+				return KeyboardIcon;
+			case 'extended':
+				return Sliders;
+			case 'macros':
+				return Code;
+			case 'encoder':
+				return RotateCw;
+			case 'display':
+				return MonitorSmartphone;
+			default:
+				return KeyboardIcon;
+		}
+	}
 </script>
 
 <div class="macropad-config">
-	<!-- Top Section -->
-	<section class="top-section">
-		<!-- Layer Navigation -->
-		<div class="layer-nav">
-			{#if loading.actions}
-				<div class="loading">Loading layers...</div>
-			{:else if errors.actions}
-				<div class="error">{errors.actions}</div>
-			{:else if availableLayers.length > 0}
-				{#each availableLayers as layerName}
-					<button 
-						class="layer-button" 
-						class:active={activeLayer === layerName}
-						on:click={() => handleLayerSelect(layerName)}
-					>
-						{layerName}
-					</button>
-				{/each}
-			{:else}
-				<div class="no-layers">No layers available</div>
-			{/if}
-		</div>
+	<!-- Full width Layer Navigation with "Layers: " text -->
+	<section class="layer-nav">
+		<div class="layer-label">Layers:</div>
+		{#if loading.actions}
+			<div class="loading">Loading layers...</div>
+		{:else if errors.actions}
+			<div class="error">{errors.actions}</div>
+		{:else if availableLayers.length > 0}
+			{#each availableLayers as layerName}
+				<button 
+					class="layer-button" 
+					class:active={activeLayer === layerName}
+					on:click={() => handleLayerSelect(layerName)}
+				>
+					{layerName}
+				</button>
+			{/each}
+		{:else}
+			<div class="no-layers">No layers available</div>
+		{/if}
+	</section>
 
-		<!-- Macropad Visual Representation -->
+	<!-- Main content -->
+	<div class="main-content">
+		<!-- Macropad Visual - fixed to be like before -->
 		<div class="macropad-visual">
 			{#if loading.info || loading.components}
 				<div class="loading">Loading macropad configuration...</div>
@@ -724,37 +749,73 @@
 				</div>
 			{/if}
 		</div>
-	</section>
 
-	<!-- Bottom Section -->
-	<section class="bottom-section">
 		{#if selectedComponent && selectedComponentData}
-			<!-- Component Tabs -->
-			<div class="component-tabs">
-				{#each availableTabs as tab}
-					<button 
-						class="tab-button" 
-						class:active={activeTab === tab}
-						on:click={() => handleTabSelect(tab)}
-					>
-						{tab.charAt(0).toUpperCase() + tab.slice(1)}
-					</button>
-				{/each}
-			</div>
+			<!-- Full width configuration layout -->
+			<div class="config-layout">
+				<!-- Left column: Tab sidebar with icons -->
+				<div class="tab-sidebar">
+					{#each availableTabs as tab}
+						<button 
+							class="sidebar-tab-button" 
+							class:active={activeTab === tab}
+							on:click={() => handleTabSelect(tab)}
+							title={tab.charAt(0).toUpperCase() + tab.slice(1)}
+						>
+							<svelte:component this={getTabIcon(tab)} size={24} />
+						</button>
+					{/each}
+				</div>
 
-			<!-- Configuration Area -->
-			<div class="config-area">
-				{#if activeTab === 'basic'}
-					<div class="tab-content">
-						<h3>Basic Configuration</h3>
-						<div class="component-info">
-							<p><strong>Component ID:</strong> {selectedComponent}</p>
-							<p><strong>Component Type:</strong> {selectedComponentData.type}</p>
-							<p><strong>Active Layer:</strong> {activeLayer}</p>
-							
-							{#if activeLayer && actionsData}
-								{@const binding = getComponentConfig(selectedComponent)}
-								{#if binding}
+				<!-- Middle column: Component details -->
+				<div class="details-panel">
+					<h3>Component Details</h3>
+					<div class="component-info">
+						<p><strong>Component ID:</strong> {selectedComponent}</p>
+						<p><strong>Component Type:</strong> {selectedComponentData.type}</p>
+						<p><strong>Active Layer:</strong> {activeLayer}</p>
+						
+						{#if activeLayer && actionsData}
+							{@const binding = getComponentConfig(selectedComponent)}
+							{#if binding}
+								{#if selectedComponentData.type === 'encoder'}
+									<div class="encoder-details">
+										<h4>Encoder Bindings</h4>
+										
+										<!-- Clockwise binding -->
+										<div class="encoder-part-detail">
+											<p><strong>Clockwise:</strong></p>
+											{#if binding.clockwise}
+												<p>Type: {binding.clockwise.type}</p>
+												<p>Value: {binding.clockwise.report?.join(', ') || 'None'}</p>
+											{:else}
+												<p><em>Not configured</em></p>
+											{/if}
+										</div>
+										
+										<!-- Counterclockwise binding -->
+										<div class="encoder-part-detail">
+											<p><strong>Counterclockwise:</strong></p>
+											{#if binding.counterclockwise}
+												<p>Type: {binding.counterclockwise.type}</p>
+												<p>Value: {binding.counterclockwise.report?.join(', ') || 'None'}</p>
+											{:else}
+												<p><em>Not configured</em></p>
+											{/if}
+										</div>
+										
+										<!-- Button binding -->
+										<div class="encoder-part-detail">
+											<p><strong>Button Press:</strong></p>
+											{#if binding.buttonPress}
+												<p>Type: {binding.buttonPress.type}</p>
+												<p>Value: {binding.buttonPress.report?.join(', ') || 'None'}</p>
+											{:else}
+												<p><em>Not configured</em></p>
+											{/if}
+										</div>
+									</div>
+								{:else}
 									<div class="binding-info">
 										<h4>Current Binding</h4>
 										<p><strong>Type:</strong> {binding.type}</p>
@@ -770,165 +831,226 @@
 											<p><em>This button is configured to cycle through layers</em></p>
 										{/if}
 									</div>
-								{:else}
-									<div class="binding-info">
-										<h4>Current Binding</h4>
-										<p><em>No binding configured for this component in the current layer.</em></p>
-									</div>
 								{/if}
 							{:else}
 								<div class="binding-info">
 									<h4>Current Binding</h4>
-									<p><em>No binding information available</em></p>
+									<p><em>No binding configured for this component in the current layer.</em></p>
 								</div>
 							{/if}
-							
-							<div class="new-binding">
-								<h4>New Binding</h4>
-								{#if selectedKey}
-									<p><strong>Key:</strong> {selectedKey}</p>
-								{:else}
-									<p><em>None</em></p>
-								{/if}
-							</div>
-						</div>
-						
-						<div class="keyboard-section">
-							<h4>Select a key to map to this component</h4>
-							<Keyboard 
-								{selectedKey} 
-								on:keySelect={(event) => handleKeySelect(event, 'standard')} 
-							/>
-						</div>
-					</div>
-				{:else if activeTab === 'extended'}
-					<div class="tab-content">
-						<h3>Extended Configuration</h3>
-						<div class="component-info">
-							<p><strong>Component ID:</strong> {selectedComponent}</p>
-							<p><strong>Component Type:</strong> {selectedComponentData.type}</p>
-							<p><strong>Active Layer:</strong> {activeLayer}</p>
-							
-							{#if activeLayer && actionsData}
-								{@const binding = getComponentConfig(selectedComponent)}
-								{#if binding}
-									<div class="binding-info">
-										<h4>Current Binding</h4>
-										<p><strong>Type:</strong> {binding.type}</p>
-										{#if binding.type === 'hid' && binding.buttonPress}
-											<p><strong>Key:</strong> {binding.buttonPress.join(', ')}</p>
-										{:else if binding.type === 'macro' && binding.macroId}
-											<p><strong>Macro:</strong> {binding.macroId}</p>
-										{:else if binding.type === 'multimedia'}
-											<p><strong>Button Press:</strong> {binding.buttonPress ? binding.buttonPress.join(', ') : 'None'}</p>
-										{:else if binding.type === 'cycle-layer'}
-											<p><em>This button is configured to cycle through layers</em></p>
-										{/if}
-									</div>
-								{:else}
-									<div class="binding-info">
-										<h4>Current Binding</h4>
-										<p><em>No binding configured for this component in the current layer.</em></p>
-									</div>
-								{/if}
-							{:else}
-								<div class="binding-info">
-									<h4>Current Binding</h4>
-									<p><em>No binding information available</em></p>
-								</div>
-							{/if}
-							
-							<div class="new-binding">
-								<h4>New Binding</h4>
-								{#if selectedKey}
-									<p><strong>Key:</strong> {selectedKey}</p>
-								{:else}
-									<p><em>None</em></p>
-								{/if}
-							</div>
-						</div>
-						
-						<!-- Special Navigation Keys Section -->
-						<div class="special-keys-section">
-							<h4>Navigation & Special Keys</h4>
-							<div class="special-keys-grid">
-								{#each specialKeys as key}
-									<button 
-										class="special-key"
-										class:selected={selectedKey === key}
-										on:click={() => handleSpecialKeySelect(key, 'special')}
-									>
-										{key}
-									</button>
-								{/each}
-							</div>
-						</div>
-						
-						<!-- Multimedia Keys Section -->
-						<div class="multimedia-keys-section">
-							<h4>Multimedia Controls</h4>
-							<div class="multimedia-keys-grid">
-								{#each mediaKeys as key}
-									<button 
-										class="multimedia-key"
-										class:selected={selectedKey === key}
-										on:click={() => handleSpecialKeySelect(key, 'multimedia')}
-									>
-										{key}
-									</button>
-								{/each}
-							</div>
-						</div>
-					</div>
-				{:else if activeTab === 'macros'}
-					<div class="tab-content">
-						<h3>Macros Configuration</h3>
-						<p>Configure macros for {selectedComponentData.type}</p>
-					</div>
-				{:else if activeTab === 'encoder' && selectedComponentData?.type === 'encoder'}
-					<div class="tab-content">
-						<h3>Encoder Configuration</h3>
-						<div class="component-info">
-							<p><strong>Component ID:</strong> {selectedComponent}</p>
-							<p><strong>Component Type:</strong> {selectedComponentData.type}</p>
-							<p><strong>Active Layer:</strong> {activeLayer}</p>
-						</div>
-						
-						{#if activeLayer && actionsData}
-							{@const binding = getComponentConfig(selectedComponent)}
-							<EncoderConfiguration 
-								{binding}
-								componentId={selectedComponent}
-								{activeLayer}
-								{selectedKey}
-								{activeEncoderTab}
-								on:keySelect={handleEncoderKeySelect}
-								on:typeChange={handleEncoderTypeChange}
-							/>
 						{:else}
 							<div class="binding-info">
+								<h4>Current Binding</h4>
 								<p><em>No binding information available</em></p>
 							</div>
 						{/if}
+						
+						<div class="new-binding">
+							<h4>New Binding</h4>
+							{#if selectedKey}
+								<p><strong>Key:</strong> {selectedKey}</p>
+							{:else}
+								<p><em>None</em></p>
+							{/if}
+						</div>
 					</div>
-				{:else if activeTab === 'fader'}
-					<div class="tab-content">
-						<h3>Fader Configuration</h3>
-						<p>Configure potentiometer behavior</p>
-					</div>
-				{:else if activeTab === 'display'}
-					<div class="tab-content">
-						<h3>Display Configuration</h3>
-						<p>Configure display settings</p>
-					</div>
-				{/if}
+				</div>
+
+				<!-- Right column: Configuration panel -->
+				<div class="config-panel">
+					{#if activeTab === 'basic'}
+						<div class="tab-content">
+							<h3>Basic Configuration</h3>
+							
+							{#if selectedComponentData?.type === 'encoder'}
+								<!-- Encoder Parts Tabs -->
+								<div class="encoder-parts-tabs">
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'clockwise'}
+										on:click={() => activeEncoderTab = 'clockwise'}
+									>
+										Clockwise
+									</button>
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'counterclockwise'}
+										on:click={() => activeEncoderTab = 'counterclockwise'}
+									>
+										Counterclockwise
+									</button>
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'button'}
+										on:click={() => activeEncoderTab = 'button'}
+									>
+										Button Press
+									</button>
+								</div>
+								
+								<div class="encoder-part-config">
+									<h4>Configure {activeEncoderTab === 'clockwise' ? 'Clockwise Rotation' : 
+										activeEncoderTab === 'counterclockwise' ? 'Counterclockwise Rotation' : 'Button Press'}</h4>
+								</div>
+							{/if}
+							
+							<div class="keyboard-section">
+								<h4>Select a key to map to {selectedComponentData?.type === 'encoder' ? `encoder ${activeEncoderTab}` : 'this component'}</h4>
+								<Keyboard 
+									{selectedKey} 
+									on:keySelect={(event) => selectedComponentData?.type === 'encoder' 
+										? handleEncoderKeySelect(new CustomEvent('keySelect', { 
+											detail: { 
+												key: event.detail.key, 
+												action: activeEncoderTab, 
+												actionType: 'hid' 
+											} 
+										}))
+										: handleKeySelect(event, 'standard')} 
+								/>
+							</div>
+						</div>
+					{:else if activeTab === 'extended'}
+						<div class="tab-content">
+							<h3>Extended Configuration</h3>
+							
+							{#if selectedComponentData?.type === 'encoder'}
+								<!-- Encoder Parts Tabs -->
+								<div class="encoder-parts-tabs">
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'clockwise'}
+										on:click={() => activeEncoderTab = 'clockwise'}
+									>
+										Clockwise
+									</button>
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'counterclockwise'}
+										on:click={() => activeEncoderTab = 'counterclockwise'}
+									>
+										Counterclockwise
+									</button>
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'button'}
+										on:click={() => activeEncoderTab = 'button'}
+									>
+										Button Press
+									</button>
+								</div>
+								
+								<div class="encoder-part-config">
+									<h4>Configure {activeEncoderTab === 'clockwise' ? 'Clockwise Rotation' : 
+										activeEncoderTab === 'counterclockwise' ? 'Counterclockwise Rotation' : 'Button Press'}</h4>
+								</div>
+							{/if}
+							
+							<!-- Special Navigation Keys Section -->
+							<div class="special-keys-section">
+								<h4>Navigation & Special Keys</h4>
+								<div class="special-keys-grid">
+									{#each specialKeys as key}
+										<button 
+											class="special-key"
+											class:selected={selectedKey === key}
+											on:click={() => selectedComponentData?.type === 'encoder'
+												? handleEncoderKeySelect(new CustomEvent('keySelect', { 
+													detail: { 
+														key, 
+														action: activeEncoderTab, 
+														actionType: 'hid' 
+													} 
+												}))
+												: handleSpecialKeySelect(key, 'special')}
+										>
+											{key}
+										</button>
+									{/each}
+								</div>
+							</div>
+							
+							<!-- Multimedia Keys Section -->
+							<div class="multimedia-keys-section">
+								<h4>Multimedia Controls</h4>
+								<div class="multimedia-keys-grid">
+									{#each mediaKeys as key}
+										<button 
+											class="multimedia-key"
+											class:selected={selectedKey === key}
+											on:click={() => selectedComponentData?.type === 'encoder'
+												? handleEncoderKeySelect(new CustomEvent('keySelect', { 
+													detail: { 
+														key, 
+														action: activeEncoderTab, 
+														actionType: 'multimedia' 
+													} 
+												}))
+												: handleSpecialKeySelect(key, 'multimedia')}
+										>
+											{key}
+										</button>
+									{/each}
+								</div>
+							</div>
+						</div>
+					{:else if activeTab === 'macros'}
+						<div class="tab-content">
+							<h3>Macros Configuration</h3>
+							
+							{#if selectedComponentData?.type === 'encoder'}
+								<!-- Encoder Parts Tabs -->
+								<div class="encoder-parts-tabs">
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'clockwise'}
+										on:click={() => activeEncoderTab = 'clockwise'}
+									>
+										Clockwise
+									</button>
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'counterclockwise'}
+										on:click={() => activeEncoderTab = 'counterclockwise'}
+									>
+										Counterclockwise
+									</button>
+									<button 
+										class="encoder-part-tab" 
+										class:active={activeEncoderTab === 'button'}
+										on:click={() => activeEncoderTab = 'button'}
+									>
+										Button Press
+									</button>
+								</div>
+								
+								<div class="encoder-part-config">
+									<h4>Configure {activeEncoderTab === 'clockwise' ? 'Clockwise Rotation' : 
+										activeEncoderTab === 'counterclockwise' ? 'Counterclockwise Rotation' : 'Button Press'}</h4>
+								</div>
+							{/if}
+							
+							<p>Configure macros for {selectedComponentData?.type === 'encoder' ? `encoder ${activeEncoderTab}` : selectedComponentData?.type}</p>
+						</div>
+					{:else if activeTab === 'fader'}
+						<div class="tab-content">
+							<h3>Fader Configuration</h3>
+							<p>Configure potentiometer behavior</p>
+						</div>
+					{:else if activeTab === 'display'}
+						<div class="tab-content">
+							<h3>Display Configuration</h3>
+							<p>Configure display settings</p>
+						</div>
+					{/if}
+				</div>
 			</div>
 		{:else}
 			<div class="no-selection">
 				<p>Select a component to configure</p>
 			</div>
 		{/if}
-	</section>
+	</div>
 
 	<!-- Save/Cancel buttons for pending changes -->
 	{#if hasModifiedBindings}
@@ -973,17 +1095,25 @@
 		height: 100%;
 	}
 
-	.top-section {
+	.main-content {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 2rem;
+		width: 100%;
 	}
 
 	.layer-nav {
 		display: flex;
+		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem;
 		border-bottom: 1px solid var(--border-color);
+		width: 100%;
+	}
+	
+	.layer-label {
+		font-weight: bold;
+		margin-right: 0.5rem;
 	}
 
 	.layer-button {
@@ -1047,46 +1177,66 @@
 		border-color: var(--accent-color);
 	}
 
-	.bottom-section {
+	/* New 3-column layout */
+	.config-layout {
+		display: grid;
+		grid-template-columns: auto 1fr 2fr;
+		gap: 1rem;
+		border: 1px solid var(--border-color);
+		border-radius: 0.5rem;
+		overflow: hidden;
+		width: 100%;
+	}
+
+	/* Tab sidebar */
+	.tab-sidebar {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		border-top: 1px solid var(--border-color);
-		padding-top: 1rem;
-	}
-
-	.component-tabs {
-		display: flex;
 		gap: 0.5rem;
-		padding: 0.5rem;
-		border-bottom: 1px solid var(--border-color);
+		padding: 1rem;
+		background-color: var(--bg-secondary);
+		border-right: 1px solid var(--border-color);
 	}
 
-	.tab-button {
-		padding: 0.5rem 1rem;
+	.sidebar-tab-button {
+		padding: 0.75rem;
 		border-radius: 0.25rem;
-		background-color: var(--bg-secondary);
+		background-color: var(--bg-primary);
 		color: var(--text-primary);
 		border: 1px solid var(--border-color);
 		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s ease;
 	}
 
-	.tab-button:hover {
+	.sidebar-tab-button:hover {
 		background-color: var(--accent-color);
 		color: white;
 	}
 	
-	.tab-button.active {
+	.sidebar-tab-button.active {
 		background-color: var(--accent-color);
 		color: white;
 		border-color: var(--accent-color);
 	}
 
-	.config-area {
+	/* Details panel */
+	.details-panel {
 		padding: 1rem;
-		min-height: 200px;
-		background-color: var(--bg-secondary);
-		border-radius: 0.5rem;
+		background-color: var(--bg-primary);
+		border-right: 1px solid var(--border-color);
+		min-width: 250px;
+	}
+
+	/* Config panel */
+	.config-panel {
+		padding: 1rem;
+		background-color: var(--bg-primary);
+		flex-grow: 1;
+		overflow-y: auto;
+		max-height: 600px;
 	}
 	
 	.tab-content {
@@ -1105,19 +1255,19 @@
 		margin: 1rem 0 0.5rem;
 	}
 	
+	.keyboard-section {
+		margin-top: 1rem;
+	}
+
 	.component-info {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 		margin-bottom: 1rem;
 		padding: 0.5rem;
-		background-color: var(--bg-primary);
+		background-color: var(--bg-secondary);
 		border-radius: 0.25rem;
 		border: 1px solid var(--border-color);
-	}
-	
-	.keyboard-section {
-		margin-top: 1rem;
 	}
 
 	.loading, .error, .no-selection {
@@ -1142,7 +1292,7 @@
 	.binding-info, .new-binding {
 		margin-top: 1rem;
 		padding: 0.5rem;
-		background-color: var(--bg-primary);
+		background-color: var(--bg-secondary);
 		border-radius: 0.25rem;
 		border: 1px solid var(--border-color);
 	}
@@ -1157,19 +1307,103 @@
 		background-color: rgba(255, 255, 255, 0.1);
 		border-color: var(--accent-color);
 	}
-	
-	.load-button {
-		margin-top: 0.5rem;
-		padding: 0.25rem 0.5rem;
-		background-color: var(--accent-color);
-		color: white;
-		border: none;
-		border-radius: 0.25rem;
-		cursor: pointer;
+
+	/* Encoder styles */
+	.encoder-parts-tabs {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+		border-bottom: 1px solid var(--border-color);
+		padding-bottom: 0.5rem;
 	}
 	
-	.load-button:hover {
-		background-color: var(--accent-color-hover, #0056b3);
+	.encoder-part-tab {
+		padding: 0.5rem 1rem;
+		border-radius: 0.25rem;
+		background-color: var(--bg-secondary);
+		color: var(--text-primary);
+		border: 1px solid var(--border-color);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+	
+	.encoder-part-tab:hover {
+		background-color: var(--accent-color);
+		color: white;
+	}
+	
+	.encoder-part-tab.active {
+		background-color: var(--accent-color);
+		color: white;
+		border-color: var(--accent-color);
+	}
+	
+	.encoder-part-config {
+		margin-bottom: 1rem;
+	}
+	
+	.encoder-details {
+		margin-top: 1rem;
+		padding: 0.5rem;
+		background-color: var(--bg-secondary);
+		border-radius: 0.25rem;
+		border: 1px solid var(--border-color);
+	}
+	
+	.encoder-part-detail {
+		margin-top: 0.5rem;
+		padding: 0.5rem;
+		background-color: var(--bg-primary);
+		border-radius: 0.25rem;
+		border: 1px solid var(--border-color);
+	}
+	
+	.encoder-part-detail p {
+		margin: 0.25rem 0;
+	}
+
+	/* Responsive layout */
+	@media (max-width: 1024px) {
+		.config-layout {
+			grid-template-columns: auto 1fr;
+		}
+		
+		.details-panel {
+			grid-column: 2;
+			grid-row: 1;
+			border-right: none;
+			border-bottom: 1px solid var(--border-color);
+		}
+		
+		.config-panel {
+			grid-column: 2;
+			grid-row: 2;
+		}
+	}
+	
+	@media (max-width: 768px) {
+		.config-layout {
+			grid-template-columns: 1fr;
+		}
+		
+		.tab-sidebar {
+			grid-column: 1;
+			grid-row: 1;
+			flex-direction: row;
+			justify-content: center;
+			border-right: none;
+			border-bottom: 1px solid var(--border-color);
+		}
+		
+		.details-panel {
+			grid-column: 1;
+			grid-row: 2;
+		}
+		
+		.config-panel {
+			grid-column: 1;
+			grid-row: 3;
+		}
 	}
 
 	.save-section {
