@@ -15,6 +15,12 @@ export const API_ENDPOINTS = {
 		GET: (name: string) => `/api/macros/${name}`,
 		LIST: '/api/macros',
 		CREATE: '/api/macros'
+	},
+	WIFI: {
+		SCAN: '/api/wifi/scan',
+		CONFIG: '/api/config/wifi',
+		CONNECT: '/api/wifi/connect',
+		STATUS: '/api/status'
 	}
 };
 
