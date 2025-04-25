@@ -271,7 +271,8 @@ export class ApiClient {
 	 * Scan for available WiFi networks
 	 */
 	static async scanWiFiNetworks() {
-		return this.request(API_ENDPOINTS.WIFI.SCAN);
+		const response = await this.request<{ networks: any[] }>(API_ENDPOINTS.WIFI.SCAN);
+		return response.networks;
 	}
 
 	/**

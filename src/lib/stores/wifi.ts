@@ -47,7 +47,22 @@ export async function scanNetworks() {
 		isScanning.set(true);
 		wifiError.set(null);
 
+		console.log('Starting WiFi network scan...');
 		const networks = (await ApiClient.scanWiFiNetworks()) as WiFiNetwork[];
+
+		// Log the number of networks found
+		console.log(`Found ${networks.length} WiFi networks:`);
+
+		// Log details of each network
+		networks.forEach((network, index) => {
+			console.log(`Network ${index + 1}:`, {
+				ssid: network.ssid,
+				rssi: network.rssi,
+				encryption: network.encryption,
+				channel: network.channel
+			});
+		});
+
 		wifiNetworks.set(networks);
 
 		return networks;
