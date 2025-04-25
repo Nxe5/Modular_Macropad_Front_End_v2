@@ -98,7 +98,33 @@
 			}
 		} catch (error) {
 			console.error(`Error fetching ${tab} data:`, error);
-			errors[tab as TabId] = error instanceof Error ? error.message : 'Unknown error';
+			
+			// Format the error message based on the type
+			if (error instanceof Error) {
+				let errorMsg = error.message;
+				
+				// Handle specific error messages
+				if (errorMsg.includes('API endpoint not implemented')) {
+					errors[tab as TabId] = `This feature requires a firmware update. The current firmware doesn't support this functionality.`;
+				} else if (errorMsg.includes('API Error:')) {
+					// Extract clean error message from API Error format
+					try {
+						const jsonStart = errorMsg.indexOf('{');
+						if (jsonStart > -1) {
+							const jsonPart = errorMsg.substring(jsonStart);
+							const parsedError = JSON.parse(jsonPart);
+							errorMsg = parsedError.error || parsedError.message || errorMsg;
+						}
+					} catch (e) {
+						// If JSON parsing fails, use the original message
+					}
+					errors[tab as TabId] = errorMsg;
+				} else {
+					errors[tab as TabId] = errorMsg;
+				}
+			} else {
+				errors[tab as TabId] = 'Unknown error occurred';
+			}
 		} finally {
 			loading[tab as TabId] = false;
 		}
@@ -114,17 +140,18 @@
 			const parsedData = JSON.parse(editedContent[tab as TabId]);
 			
 			// Send the updated data to the ESP32
+			let response;
 			switch (tab) {
 				case 'components':
-					await ConfigApi.updateComponents(parsedData);
+					response = await ConfigApi.updateComponents(parsedData);
 					componentsData = parsedData;
 					break;
 				case 'actions':
-					await ConfigApi.updateActions(parsedData);
+					response = await ConfigApi.updateActions(parsedData);
 					actionsData = parsedData;
 					break;
 				case 'leds':
-					await ConfigApi.updateLeds(parsedData);
+					response = await ConfigApi.updateLeds(parsedData);
 					ledsData = parsedData;
 					break;
 			}
@@ -133,10 +160,33 @@
 			alert(`${tab.charAt(0).toUpperCase() + tab.slice(1)} configuration saved successfully!`);
 		} catch (error) {
 			console.error(`Error saving ${tab} data:`, error);
-			errors[tab as TabId] = error instanceof Error ? error.message : 'Unknown error';
+			
+			// Handle different types of errors
 			if (error instanceof SyntaxError) {
 				errors[tab as TabId] = "Invalid JSON format: " + error.message;
+			} else if (error instanceof Error) {
+				// Attempt to extract and format the error message from API
+				let errorMsg = error.message;
+				if (errorMsg.includes('API Error:')) {
+					try {
+						// Extract JSON part of the error message
+						const jsonStart = errorMsg.indexOf('{');
+						if (jsonStart > -1) {
+							const jsonPart = errorMsg.substring(jsonStart);
+							const parsedError = JSON.parse(jsonPart);
+							errorMsg = parsedError.error || parsedError.message || errorMsg;
+						}
+					} catch (e) {
+						// If we can't parse as JSON, use the raw error message
+					}
+				}
+				errors[tab as TabId] = errorMsg;
+			} else {
+				errors[tab as TabId] = "Unknown error occurred";
 			}
+			
+			// Show error in alert for immediate attention
+			alert(`Error saving ${tab} configuration: ${errors[tab as TabId]}`);
 		} finally {
 			loading[tab as TabId] = false;
 		}

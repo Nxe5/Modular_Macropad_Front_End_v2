@@ -7,14 +7,20 @@ import { updateConnectionStatus } from '$lib/stores/connection';
 const API_BASE_URL = '';
 
 // Default request timeout in milliseconds
-const DEFAULT_TIMEOUT = 5000;
+const DEFAULT_TIMEOUT = 10000;
+
+// Maximum retry attempts
+const MAX_RETRIES = 3;
+
+// Delay between retries in milliseconds
+const RETRY_DELAY = 1000;
 
 /**
  * Base API client class for making HTTP requests to the macropad
  */
 export class ApiClient {
 	/**
-	 * Make a request to the macropad API
+	 * Make a request to the macropad API with retry logic
 	 * @param endpoint The API endpoint to request
 	 * @param options Fetch options
 	 * @returns Promise with the response data
@@ -22,7 +28,8 @@ export class ApiClient {
 	static async request<T>(
 		endpoint: string,
 		options: RequestInit = {},
-		timeout: number = DEFAULT_TIMEOUT
+		timeout: number = DEFAULT_TIMEOUT,
+		retryCount: number = 0
 	): Promise<T> {
 		const url = `${API_BASE_URL}${endpoint}`;
 
@@ -37,6 +44,7 @@ export class ApiClient {
 				...options,
 				headers: {
 					'Content-Type': 'application/json',
+					Accept: 'application/json',
 					...options.headers
 				},
 				signal: controller.signal
@@ -45,9 +53,33 @@ export class ApiClient {
 			clearTimeout(timeoutId);
 
 			if (!response.ok) {
-				const errorText = await response.text();
-				updateConnectionStatus('disconnected', `${response.status}: ${errorText}`);
-				throw new Error(`API Error: ${response.status} ${response.statusText}\n${errorText}`);
+				// Store response clone before attempting to read body
+				const responseClone = response.clone();
+
+				// Handle specific HTTP status codes
+				if (response.status === 501) {
+					updateConnectionStatus('disconnected', `API endpoint not implemented: ${endpoint}`);
+					throw new Error(
+						`API endpoint not implemented: ${endpoint}. This feature might be available in a future firmware update.`
+					);
+				}
+
+				// Try to parse error response as JSON first
+				try {
+					const errorJson = await response.json();
+					updateConnectionStatus(
+						'disconnected',
+						`${response.status}: ${JSON.stringify(errorJson)}`
+					);
+					throw new Error(
+						`API Error: ${response.status} ${response.statusText}\n${JSON.stringify(errorJson)}`
+					);
+				} catch (e) {
+					// If not JSON, use text from clone
+					const errorText = await responseClone.text();
+					updateConnectionStatus('disconnected', `${response.status}: ${errorText}`);
+					throw new Error(`API Error: ${response.status} ${response.statusText}\n${errorText}`);
+				}
 			}
 
 			updateConnectionStatus('connected');
@@ -57,19 +89,58 @@ export class ApiClient {
 				return {} as T;
 			}
 
-			return await response.json();
+			// Create a clone before trying to parse
+			const responseClone = response.clone();
+
+			// Try to parse response as JSON
+			try {
+				const contentType = response.headers.get('content-type');
+				if (contentType && contentType.includes('application/json')) {
+					return await response.json();
+				} else {
+					// If not JSON, try to parse as text and then as JSON
+					const text = await responseClone.text();
+					try {
+						return JSON.parse(text);
+					} catch (e) {
+						// If text is not valid JSON, return it as is
+						return text as unknown as T;
+					}
+				}
+			} catch (error) {
+				console.warn(`Failed to parse response as JSON for ${url}:`, error);
+				// Return empty object for non-JSON responses
+				return {} as T;
+			}
 		} catch (error) {
 			clearTimeout(timeoutId);
 
+			// Handle specific error types
 			if (error instanceof DOMException && error.name === 'AbortError') {
 				updateConnectionStatus('disconnected', 'Request timeout');
-				throw new Error(`Request timeout: ${url}`);
+				if (retryCount < MAX_RETRIES) {
+					console.log(`Retrying request to ${url} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+					await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+					return this.request<T>(endpoint, options, timeout, retryCount + 1);
+				}
+				throw new Error(`Request timeout after ${MAX_RETRIES} attempts: ${url}`);
 			}
 
 			updateConnectionStatus(
 				'disconnected',
 				error instanceof Error ? error.message : 'Unknown error'
 			);
+
+			// Retry on network errors
+			if (
+				retryCount < MAX_RETRIES &&
+				(error instanceof TypeError || error instanceof DOMException)
+			) {
+				console.log(`Retrying request to ${url} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+				await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+				return this.request<T>(endpoint, options, timeout, retryCount + 1);
+			}
+
 			throw error;
 		}
 	}
@@ -194,6 +265,44 @@ export class ApiClient {
 	 */
 	static async getMacros() {
 		return this.request(API_ENDPOINTS.MACROS.LIST);
+	}
+
+	/**
+	 * Scan for available WiFi networks
+	 */
+	static async scanWiFiNetworks() {
+		return this.request(API_ENDPOINTS.WIFI.SCAN);
+	}
+
+	/**
+	 * Get current WiFi configuration
+	 */
+	static async getWiFiConfig() {
+		return this.request(API_ENDPOINTS.WIFI.CONFIG);
+	}
+
+	/**
+	 * Connect to a WiFi network
+	 */
+	static async connectToWiFi(
+		ssid: string,
+		password: string,
+		apMode: boolean = false,
+		apName: string = ''
+	) {
+		return this.post(API_ENDPOINTS.WIFI.CONFIG, {
+			ssid,
+			password,
+			ap_mode: apMode,
+			ap_name: apName
+		});
+	}
+
+	/**
+	 * Get system status including WiFi status
+	 */
+	static async getSystemStatus() {
+		return this.request(API_ENDPOINTS.WIFI.STATUS);
 	}
 
 	/**
