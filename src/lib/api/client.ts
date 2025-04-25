@@ -2,6 +2,7 @@ import type { MacropadConfig } from '$lib/types/config';
 import type { Macro } from '$lib/types/macro';
 import { API_ENDPOINTS } from './endpoints';
 import { updateConnectionStatus } from '$lib/stores/connection';
+import { fetchMockData, hasMockData } from './mockDataFallback';
 
 // Base URL for API requests - using relative URLs will make it work with any host
 const API_BASE_URL = '';
@@ -14,6 +15,9 @@ const MAX_RETRIES = 3;
 
 // Delay between retries in milliseconds
 const RETRY_DELAY = 1000;
+
+// Flag to enable/disable mock data fallback
+const USE_MOCK_DATA_FALLBACK = true;
 
 /**
  * Base API client class for making HTTP requests to the macropad
@@ -123,6 +127,20 @@ export class ApiClient {
 					await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
 					return this.request<T>(endpoint, options, timeout, retryCount + 1);
 				}
+
+				// After max retries, try to use mock data if available
+				if (USE_MOCK_DATA_FALLBACK && hasMockData(endpoint)) {
+					console.log(`Falling back to mock data for ${endpoint}`);
+					try {
+						const mockData = await fetchMockData<T>(endpoint);
+						updateConnectionStatus('mock', `Using mock data for ${endpoint}`);
+						return mockData;
+					} catch (mockError) {
+						console.error(`Failed to load mock data for ${endpoint}:`, mockError);
+						throw new Error(`Request timeout after ${MAX_RETRIES} attempts: ${url}`);
+					}
+				}
+
 				throw new Error(`Request timeout after ${MAX_RETRIES} attempts: ${url}`);
 			}
 
@@ -139,6 +157,19 @@ export class ApiClient {
 				console.log(`Retrying request to ${url} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
 				await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
 				return this.request<T>(endpoint, options, timeout, retryCount + 1);
+			}
+
+			// If all retries fail, try to use mock data if available
+			if (USE_MOCK_DATA_FALLBACK && hasMockData(endpoint)) {
+				console.log(`Falling back to mock data for ${endpoint}`);
+				try {
+					const mockData = await fetchMockData<T>(endpoint);
+					updateConnectionStatus('mock', `Using mock data for ${endpoint}`);
+					return mockData;
+				} catch (mockError) {
+					console.error(`Failed to load mock data for ${endpoint}:`, mockError);
+					throw error;
+				}
 			}
 
 			throw error;

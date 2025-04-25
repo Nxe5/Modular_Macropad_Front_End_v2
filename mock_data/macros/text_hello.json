@@ -1,0 +1,107 @@
+{
+  "id": "text_hello",
+  "name": "Type Hello World",
+  "description": "Types 'Hello, World!' with a typing effect",
+  "commands": [
+    {
+      "type": "type_text",
+      "text": "H"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "e"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "l"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "l"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "o"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": ","
+    },
+    {
+      "type": "delay",
+      "milliseconds": 200
+    },
+    {
+      "type": "type_text",
+      "text": " "
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "W"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "o"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "r"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "l"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "d"
+    },
+    {
+      "type": "delay",
+      "milliseconds": 100
+    },
+    {
+      "type": "type_text",
+      "text": "!"
+    }
+  ]
+} 

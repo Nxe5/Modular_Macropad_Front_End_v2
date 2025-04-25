@@ -27,14 +27,48 @@
 	function selectNetwork(network: WiFiNetwork) {
 		dispatch('select', { network });
 	}
+	
+	// Track dropdown state
+	let isDropdownOpen = false;
+	
+	// Toggle dropdown
+	function toggleDropdown() {
+		if (!$isScanning) {
+			isDropdownOpen = !isDropdownOpen;
+		}
+	}
+	
+	// Close dropdown when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		const dropdown = document.querySelector('.network-dropdown');
+		
+		if (dropdown && !dropdown.contains(target) && isDropdownOpen) {
+			isDropdownOpen = false;
+		}
+	}
+	
+	// Add click outside listener
+	if (typeof window !== 'undefined') {
+		window.addEventListener('click', handleClickOutside);
+	}
+	
+	// Handle scan button click
+	function handleScan(event: Event) {
+		event.stopPropagation();
+		dispatch('refresh');
+	}
+	
+	// Get the currently connected network, if any
+	$: connectedNetwork = $wifiNetworks.find(network => isConnected(network)) || null;
 </script>
 
 <div class="network-list">
 	<div class="list-header">
-		<h3>Available Networks</h3>
+		<h3>WiFi Connection</h3>
 		
 		<Button 
-			on:click={() => dispatch('refresh')} 
+			on:click={handleScan} 
 			disabled={$isScanning}
 		>
 			{#if $isScanning}
@@ -46,54 +80,73 @@
 		</Button>
 	</div>
 	
-	{#if $isScanning}
-		<div class="scanning-message">
-			<p>Scanning for networks...</p>
-		</div>
-	{:else if $wifiNetworks.length === 0}
-		<div class="empty-message">
-			<p>No networks found. Try scanning again.</p>
-		</div>
-	{:else}
-		<ul class="networks">
-			{#each $wifiNetworks as network}
-				<li 
-					class="network-item {isConnected(network) ? 'connected' : ''}"
-					on:click={() => selectNetwork(network)}
-					on:keydown={(e) => e.key === 'Enter' && selectNetwork(network)}
-					tabindex="0"
-				>
-					<div class="network-info">
-						<span class="network-name">{network.ssid}</span>
-						<span class="network-security">{network.encryption}</span>
+	<div class="network-selection">
+		<div class="dropdown-label">Select Network:</div>
+		
+		<div class="network-dropdown">
+			<button 
+				class="dropdown-button" 
+				on:click={toggleDropdown}
+				disabled={$isScanning || $wifiNetworks.length === 0}
+			>
+				{#if $isScanning}
+					<span>Scanning for networks...</span>
+				{:else if $wifiNetworks.length === 0}
+					<span>No networks found</span>
+				{:else if connectedNetwork}
+					<div class="selected-network">
+						<span>{connectedNetwork.ssid}</span>
+						<span class="connected-badge">Connected</span>
 					</div>
-					
-					<div class="network-signal {getSignalStrengthClass(network.rssi)}">
-						<span class="signal-bar"></span>
-						<span class="signal-bar"></span>
-						<span class="signal-bar"></span>
-						<span class="signal-bar"></span>
-					</div>
-					
-					{#if isConnected(network)}
-						<div class="connected-indicator">
-							Connected
+				{:else}
+					<span>Select a WiFi network</span>
+				{/if}
+				<span class="dropdown-arrow">▼</span>
+			</button>
+			
+			{#if isDropdownOpen && $wifiNetworks.length > 0}
+				<div class="dropdown-content">
+					{#each $wifiNetworks as network}
+						<div 
+							class="dropdown-item {isConnected(network) ? 'connected' : ''}"
+							on:click={() => { selectNetwork(network); isDropdownOpen = false; }}
+							on:keydown={(e) => e.key === 'Enter' && selectNetwork(network)}
+							tabindex="0"
+						>
+							<div class="network-info">
+								<span class="network-name">{network.ssid}</span>
+								<span class="network-security">{network.encryption}</span>
+							</div>
+							
+							<div class="network-signal {getSignalStrengthClass(network.rssi)}">
+								<span class="signal-bar"></span>
+								<span class="signal-bar"></span>
+								<span class="signal-bar"></span>
+								<span class="signal-bar"></span>
+							</div>
+							
+							{#if isConnected(network)}
+								<div class="connected-indicator">
+									Connected
+								</div>
+							{/if}
 						</div>
-					{/if}
-				</li>
-			{/each}
-		</ul>
-	{/if}
+					{/each}
+				</div>
+			{/if}
+		</div>
+	</div>
 </div>
 
 <style>
 	.network-list {
 		border-radius: 0.5rem;
-		background: var(--card-bg);
-		box-shadow: var(--shadow-sm);
+		background: var(--background-primary);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 		width: 100%;
 		max-width: 500px;
 		margin: 0 auto;
+		border: 1px solid var(--border);
 	}
 	
 	.list-header {
@@ -101,48 +154,99 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem;
-		border-bottom: 1px solid var(--border-color);
+		border-bottom: 1px solid var(--border);
 	}
 	
 	.list-header h3 {
 		margin: 0;
-		font-size: 1rem;
+		font-size: 1.125rem;
 		font-weight: 600;
+		color: var(--text-primary);
 	}
 	
-	.empty-message,
-	.scanning-message {
-		padding: 2rem;
-		text-align: center;
+	.network-selection {
+		padding: 1rem;
+	}
+	
+	.dropdown-label {
+		font-weight: 500;
+		margin-bottom: 0.5rem;
 		color: var(--text-secondary);
 	}
 	
-	.networks {
-		list-style: none;
-		padding: 0;
-		margin: 0;
+	.network-dropdown {
+		position: relative;
+		margin-bottom: 1rem;
 	}
 	
-	.network-item {
+	.dropdown-button {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 1rem;
-		border-bottom: 1px solid var(--border-color);
+		width: 100%;
+		padding: 0.75rem 1rem;
+		background-color: var(--background-secondary);
+		border: 1px solid var(--border);
+		border-radius: 0.375rem;
+		font-size: 1rem;
+		text-align: left;
 		cursor: pointer;
-		transition: background-color 0.2s;
+		transition: all 0.2s;
+		color: var(--text-primary);
 	}
 	
-	.network-item:last-child {
+	.dropdown-button:hover:not(:disabled) {
+		border-color: var(--primary);
+	}
+	
+	.dropdown-button:disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
+	}
+	
+	.dropdown-arrow {
+		font-size: 0.75rem;
+		transition: transform 0.2s;
+	}
+	
+	.network-dropdown:has(.dropdown-content) .dropdown-arrow {
+		transform: rotate(180deg);
+	}
+	
+	.dropdown-content {
+		position: absolute;
+		top: calc(100% + 0.5rem);
+		left: 0;
+		right: 0;
+		z-index: 10;
+		background-color: var(--background-primary);
+		border: 1px solid var(--border);
+		border-radius: 0.375rem;
+		max-height: 300px;
+		overflow-y: auto;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+	
+	.dropdown-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.875rem 1rem;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		border-bottom: 1px solid var(--border);
+	}
+	
+	.dropdown-item:last-child {
 		border-bottom: none;
 	}
 	
-	.network-item:hover {
-		background-color: var(--hover-bg);
+	.dropdown-item:hover {
+		background-color: var(--background-secondary);
 	}
 	
-	.network-item.connected {
-		background-color: var(--primary-highlight);
+	.dropdown-item.connected {
+		background-color: var(--primary-light);
 	}
 	
 	.network-info {
@@ -153,6 +257,7 @@
 	.network-name {
 		font-weight: 500;
 		margin-bottom: 0.25rem;
+		color: var(--text-primary);
 	}
 	
 	.network-security {
@@ -193,8 +298,23 @@
 	
 	.connected-indicator {
 		font-size: 0.75rem;
-		color: var(--primary-color);
+		color: var(--primary);
 		font-weight: 600;
+	}
+	
+	.connected-badge {
+		font-size: 0.75rem;
+		color: var(--primary);
+		font-weight: 600;
+		background-color: var(--primary-light);
+		padding: 0.25rem 0.5rem;
+		border-radius: 1rem;
+		margin-left: 0.5rem;
+	}
+	
+	.selected-network {
+		display: flex;
+		align-items: center;
 	}
 	
 	.spinner {

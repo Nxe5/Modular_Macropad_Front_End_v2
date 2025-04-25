@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import type { WiFiNetwork } from '$lib/types/wifi';
-	import { isConnecting, wifiError } from '$lib/stores/wifi';
+	import { isConnecting, wifiError, wifiStatus } from '$lib/stores/wifi';
 	import Button from '../button.svelte';
 	import Input from '../input.svelte';
 	
@@ -12,6 +12,7 @@
 	let password = '';
 	let apMode = false;
 	let apName = '';
+	let savedPasswords: Record<string, string> = {};
 	
 	// Event dispatcher
 	const dispatch = createEventDispatcher<{
@@ -19,15 +20,61 @@
 		cancel: void;
 	}>();
 	
+	// Remember previously connected SSID
+	let previousSsid = $wifiStatus.connected ? $wifiStatus.ssid : '';
+	
+	// Try to load saved passwords from localStorage
+	onMount(() => {
+		try {
+			const savedData = localStorage.getItem('wifi_passwords');
+			if (savedData) {
+				savedPasswords = JSON.parse(savedData);
+			}
+		} catch (e) {
+			console.error('Failed to load saved passwords', e);
+		}
+	});
+	
 	// Reset form when network changes
 	$: if (network) {
-		password = '';
-		apMode = false;
-		apName = 'MacroPad_' + (network ? network.ssid.replace(/[^a-zA-Z0-9]/g, '_') : '');
+		// Try to get previously saved password for this network
+		if (savedPasswords[network.ssid]) {
+			password = savedPasswords[network.ssid];
+		} else {
+			password = '';
+		}
+		
+		// Default to AP mode (keep current connection) if this is not the currently connected network
+		apMode = network.ssid !== $wifiStatus.ssid && $wifiStatus.connected;
+		
+		apName = previousSsid && network.ssid !== previousSsid 
+			? 'MacroPad_' + previousSsid.replace(/[^a-zA-Z0-9]/g, '_')
+			: 'MacroPad_' + (network ? network.ssid.replace(/[^a-zA-Z0-9]/g, '_') : '');
+	}
+	
+	// Save password when connecting
+	function savePassword(ssid: string, pwd: string) {
+		if (!pwd) return;
+		
+		try {
+			savedPasswords[ssid] = pwd;
+			localStorage.setItem('wifi_passwords', JSON.stringify(savedPasswords));
+		} catch (e) {
+			console.error('Failed to save password', e);
+		}
 	}
 	
 	function handleConnect() {
 		if (!network) return;
+		
+		// Save password for future use
+		if (password && network.encryption !== 'OPEN') {
+			savePassword(network.ssid, password);
+		}
+		
+		// Remember this SSID for next time
+		previousSsid = network.ssid;
+		
 		dispatch('connect', { 
 			ssid: network.ssid, 
 			password, 
@@ -51,6 +98,7 @@
 		<div class="dialog">
 			<div class="dialog-header">
 				<h3>Connect to "{network.ssid}"</h3>
+				<button class="close-button" on:click={handleCancel}>×</button>
 			</div>
 			
 			<div class="dialog-content">
@@ -62,7 +110,7 @@
 								label="Password"
 								bind:value={password}
 								required={network.encryption !== 'OPEN' && !apMode}
-								disabled={$isConnecting || apMode}
+								disabled={$isConnecting}
 								placeholder="Enter network password"
 							/>
 						</div>
@@ -71,10 +119,35 @@
 					{/if}
 					
 					<div class="form-field ap-options">
-						<label class="checkbox-label">
-							<input type="checkbox" bind:checked={apMode} />
-							<span>AP Mode Only (don't connect to this WiFi)</span>
-						</label>
+						<div class="ap-mode-selector">
+							<label class="radio-label">
+								<input 
+									type="radio" 
+									name="mode" 
+									checked={!apMode} 
+									on:change={() => apMode = false}
+									disabled={$isConnecting}
+								/>
+								<span class="radio-text">
+									<span class="radio-title">Connect to "{network.ssid}" only</span>
+									<span class="radio-desc">Replace current WiFi connection (will disconnect your laptop)</span>
+								</span>
+							</label>
+							
+							<label class="radio-label">
+								<input 
+									type="radio" 
+									name="mode" 
+									checked={apMode} 
+									on:change={() => apMode = true}
+									disabled={$isConnecting}
+								/>
+								<span class="radio-text">
+									<span class="radio-title">Connect while keeping AP active</span>
+									<span class="radio-desc">Connect to new network while maintaining your current connection</span>
+								</span>
+							</label>
+						</div>
 						
 						{#if apMode}
 							<div class="form-field">
@@ -87,7 +160,7 @@
 									placeholder="Enter AP name"
 								/>
 								<div class="field-help">
-									Name for the access point that the macropad will create
+									Your laptop will stay connected to this AP while the device also connects to {network.ssid}
 								</div>
 							</div>
 						{:else}
@@ -100,7 +173,7 @@
 									placeholder="Enter AP name"
 								/>
 								<div class="field-help">
-									Optional: Create an AP while also connecting to this network
+									Optional: Create a WiFi access point in addition to connecting to {network.ssid}
 								</div>
 							</div>
 						{/if}
@@ -126,7 +199,13 @@
 							type="submit"
 							disabled={$isConnecting || (network.encryption !== 'OPEN' && !password && !apMode)}
 						>
-							{$isConnecting ? 'Connecting...' : (apMode ? 'Create AP' : 'Connect')}
+							{#if $isConnecting}
+								Connecting...
+							{:else if apMode}
+								Connect (Keep AP)
+							{:else}
+								Connect Only
+							{/if}
 						</Button>
 					</div>
 				</form>
@@ -142,7 +221,8 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.5);
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(4px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -150,76 +230,150 @@
 	}
 	
 	.dialog {
-		background: var(--card-bg);
-		border-radius: 0.5rem;
+		background: var(--background-primary);
+		border-radius: 0.75rem;
 		width: 90%;
-		max-width: 400px;
-		box-shadow: var(--shadow-md);
+		max-width: 450px;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 		overflow: hidden;
+		border: 1px solid var(--border);
+		animation: dialog-appear 0.2s ease-out;
+	}
+	
+	@keyframes dialog-appear {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 	
 	.dialog-header {
-		padding: 1rem;
-		border-bottom: 1px solid var(--border-color);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem 1.25rem;
+		border-bottom: 1px solid var(--border);
+		background-color: var(--background-secondary);
 	}
 	
 	.dialog-header h3 {
 		margin: 0;
 		font-size: 1.1rem;
 		font-weight: 600;
+		color: var(--text-primary);
+	}
+	
+	.close-button {
+		background: none;
+		border: none;
+		font-size: 1.5rem;
+		line-height: 1;
+		color: var(--text-secondary);
+		cursor: pointer;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+	}
+	
+	.close-button:hover {
+		background-color: var(--background-tertiary);
+		color: var(--text-primary);
 	}
 	
 	.dialog-content {
-		padding: 1rem;
+		padding: 1.25rem;
 	}
 	
 	.form-field {
-		margin-bottom: 1rem;
-	}
-	
-	.checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin: 0.5rem 0;
-		cursor: pointer;
-	}
-	
-	.checkbox-label input {
-		margin: 0;
-		cursor: pointer;
+		margin-bottom: 1.25rem;
 	}
 	
 	.ap-options {
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--border-color-light);
+		padding: 1rem;
+		border-radius: 0.5rem;
+		background-color: var(--background-secondary);
+		margin: 1.25rem 0;
+	}
+	
+	.ap-mode-selector {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+	
+	.radio-label {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		cursor: pointer;
+		padding: 0.75rem;
+		border-radius: 0.5rem;
+		transition: background-color 0.2s;
+	}
+	
+	.radio-label:hover {
+		background-color: var(--background-tertiary);
+	}
+	
+	.radio-label input {
+		margin-top: 0.25rem;
+	}
+	
+	.radio-text {
+		display: flex;
+		flex-direction: column;
+	}
+	
+	.radio-title {
+		font-weight: 500;
+		color: var(--text-primary);
+		margin-bottom: 0.25rem;
+	}
+	
+	.radio-desc {
+		font-size: 0.875rem;
+		color: var(--text-secondary);
 	}
 	
 	.field-help {
-		margin-top: 0.25rem;
+		margin-top: 0.5rem;
 		font-size: 0.75rem;
 		color: var(--text-secondary);
 	}
 	
 	.error-message {
-		padding: 0.75rem;
-		border-radius: 0.25rem;
-		background: var(--error-bg);
-		color: var(--error-text);
-		margin-bottom: 1rem;
+		padding: 0.875rem;
+		border-radius: 0.5rem;
+		background: var(--error-bg, rgba(255, 0, 0, 0.1));
+		color: var(--error-text, #e53935);
+		margin-bottom: 1.25rem;
 		font-size: 0.875rem;
+		border-left: 3px solid var(--error-text, #e53935);
 	}
 	
 	.open-network-message {
 		margin-bottom: 1rem;
 		color: var(--text-secondary);
 		font-size: 0.875rem;
+		padding: 0.875rem;
+		background-color: var(--background-secondary);
+		border-radius: 0.5rem;
 	}
 	
 	.dialog-actions {
 		display: flex;
 		justify-content: flex-end;
-		gap: 0.5rem;
-		margin-top: 1rem;
+		gap: 0.75rem;
+		margin-top: 1.5rem;
 	}
 </style> 
