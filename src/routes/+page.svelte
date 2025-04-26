@@ -1091,7 +1091,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
-		padding: 1rem;
+		/* padding: 1rem; */
 		height: 100%;
 	}
 
@@ -1100,12 +1100,12 @@
 		flex-direction: column;
 		gap: 2rem;
 		width: 100%;
+		height: 100%;
 	}
 
 	.layer-nav {
 		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+		gap: 1.5rem;
 		padding: 0.5rem;
 		border-bottom: 1px solid var(--border-color);
 		width: 100%;
@@ -1138,6 +1138,8 @@
 		border-radius: 0.5rem;
 		overflow: hidden;
 		position: relative;
+		min-height: 300px;
+		flex-shrink: 0;
 	}
 
 	.macropad-grid {
@@ -1182,10 +1184,13 @@
 		display: grid;
 		grid-template-columns: auto 1fr 2fr;
 		gap: 1rem;
-		border: 1px solid var(--border-color);
-		border-radius: 0.5rem;
+		border-top: 1px solid var(--border-color);
+		border-bottom: 1px solid var(--border-color);
+		/* border-radius: 0.5rem; */
 		overflow: hidden;
 		width: 100%;
+		height: 100%;
+		max-height: 100%;
 	}
 
 	/* Tab sidebar */
@@ -1194,7 +1199,7 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		padding: 1rem;
-		background-color: var(--bg-secondary);
+		/* background-color: var(--bg-secondary); */
 		border-right: 1px solid var(--border-color);
 	}
 
@@ -1270,7 +1275,16 @@
 		border: 1px solid var(--border-color);
 	}
 
-	.loading, .error, .no-selection {
+	.error {
+		display: flex;
+		height: 100%;
+		width: 100%;
+		color: var(--text-secondary);
+		color: var(--destructive);
+
+	}
+
+	.loading, .no-selection {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -1279,9 +1293,6 @@
 		color: var(--text-secondary);
 	}
 
-	.error {
-		color: var(--destructive);
-	}
 
 	.no-layers {
 		padding: 0.5rem;
@@ -1536,10 +1547,20 @@
 
 	/* Style differences between special and multimedia keys */
 	.special-key {
-		background-color: #f0f0f0;
+		background-color: var(--bg-secondary);
+		border-left: 3px solid var(--accent-color);
 	}
 
 	.multimedia-key {
-		background-color: #e6f7ff;
+		background-color: var(--bg-secondary);
+		border-left: 3px solid var(--multimedia-accent, #00a1ff);
+	}
+
+	.no-selection {
+		min-height: 400px;
+		border: 1px solid var(--border-color);
+		border-radius: 0.5rem;
+		/* background-color: var(--bg-secondary); */
+		margin-top: 1rem;
 	}
 </style>

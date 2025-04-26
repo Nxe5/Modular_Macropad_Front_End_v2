@@ -131,6 +131,11 @@
 	--text-secondary: #6c757d;
 	--border-color: #dee2e6;
 	--accent-color: #0d6efd;
+	--bg-hover: #e9ecef;
+	--danger: #ef4444;
+	--danger-hover: #dc2626;
+	--primary-hover: #2563eb;
+	--secondary-hover: #4b5563;
 }
 
 :root[data-theme='dark'] {
@@ -140,6 +145,11 @@
 	--text-secondary: #adb5bd;
 	--border-color: #495057;
 	--accent-color: #3d8bfd;
+	--bg-hover: #495057;
+	--danger: #ef4444;
+	--danger-hover: #dc2626;
+	--primary-hover: #2563eb;
+	--secondary-hover: #4b5563;
 }
 
 * {

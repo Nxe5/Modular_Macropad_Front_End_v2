@@ -243,7 +243,7 @@
     <Button 
       disabled={isChecking} 
       on:click={checkForUpdates}
-      variant={isChecking ? "outline" : "default"}
+      variant="primary"
     >
       {#if isChecking}
         <Spinner size="small" />
@@ -277,7 +277,7 @@
 <style>
   .firmware-update-container {
     padding: 1rem;
-    background-color: var(--background-secondary);
+    background-color: var(--bg-secondary);
     border-radius: 8px;
     max-width: 100%;
   }
@@ -289,7 +289,7 @@
   
   .firmware-info {
     margin-bottom: 1.5rem;
-    background-color: var(--background-primary);
+    background-color: var(--bg-primary);
     padding: 1rem;
     border-radius: 6px;
   }
@@ -308,10 +308,11 @@
   
   .value {
     font-family: monospace;
+    color: var(--text-primary);
   }
   
   .highlight {
-    color: var(--primary);
+    color: var(--accent-color);
     font-weight: bold;
   }
   
@@ -328,10 +329,10 @@
   
   .release-notes {
     margin: 1.5rem 0;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 1rem;
-    background-color: var(--background-primary);
+    background-color: var(--bg-primary);
   }
   
   .release-notes h3 {
@@ -369,8 +370,8 @@
   
   .retry-button {
     margin-top: 0.5rem;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--border);
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     color: var(--text-primary);
     padding: 0.5rem 1rem;
     border-radius: 4px;
@@ -380,8 +381,8 @@
   }
   
   .retry-button:hover {
-    background-color: var(--primary);
-    border-color: var(--primary);
-    color: var(--primary-foreground);
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
   }
 </style> 

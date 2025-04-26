@@ -3,6 +3,7 @@ import type { Macro } from '$lib/types/macro';
 import { API_ENDPOINTS } from './endpoints';
 import { updateConnectionStatus } from '$lib/stores/connection';
 import { fetchMockData, hasMockData } from './mockDataFallback';
+import { browser } from '$app/environment';
 
 // Base URL for API requests - using relative URLs will make it work with any host
 const API_BASE_URL = '';
@@ -16,8 +17,62 @@ const MAX_RETRIES = 3;
 // Delay between retries in milliseconds
 const RETRY_DELAY = 1000;
 
-// Flag to enable/disable mock data fallback
-const USE_MOCK_DATA_FALLBACK = true;
+// Helper to check if we should always use mock data
+function shouldUseMockData(): boolean {
+	// Explicitly disable mock data if environment variable is set
+	if (import.meta.env.VITE_DISABLE_MOCK_DATA === 'true' || import.meta.env.MODE === 'production') {
+		return false;
+	}
+	// Otherwise, check localStorage setting
+	return browser && localStorage.getItem('useMockData') === 'true';
+}
+
+/**
+ * Basic fallback data structures for common endpoints when connection fails
+ */
+const FALLBACK_DATA = {
+	[API_ENDPOINTS.CONFIG.INFO]: {
+		name: 'Modular Macropad (Disconnected)',
+		version: 'unknown',
+		device_id: 'disconnected',
+		features: [],
+		status: 'disconnected'
+	},
+	[API_ENDPOINTS.CONFIG.COMPONENTS]: {
+		rows: 3,
+		cols: 3,
+		encoders: 2,
+		leds: 9,
+		display: true
+	},
+	[API_ENDPOINTS.CONFIG.ACTIONS]: {
+		actions: []
+	},
+	[API_ENDPOINTS.CONFIG.LEDS]: {
+		leds: { config: [] }
+	},
+	[API_ENDPOINTS.MACROS.LIST]: {
+		macros: []
+	}
+};
+
+/**
+ * Generate minimal fallback data for an endpoint when API call fails
+ */
+function getFallbackData(endpoint: string): any {
+	// Handle specific endpoints with predefined fallbacks
+	if (endpoint in FALLBACK_DATA) {
+		return FALLBACK_DATA[endpoint];
+	}
+
+	// Handle parameterized endpoints
+	if (endpoint.startsWith('/api/macros/') && endpoint !== '/api/macros') {
+		return { id: endpoint.replace('/api/macros/', ''), actions: [] };
+	}
+
+	// Default empty response
+	return {};
+}
 
 /**
  * Base API client class for making HTTP requests to the macropad
@@ -35,6 +90,19 @@ export class ApiClient {
 		timeout: number = DEFAULT_TIMEOUT,
 		retryCount: number = 0
 	): Promise<T> {
+		// If we're in development mode with mock data enabled, use it immediately
+		if (shouldUseMockData() && hasMockData(endpoint)) {
+			try {
+				console.log(`Using mock data for ${endpoint}`);
+				const mockData = await fetchMockData<T>(endpoint);
+				updateConnectionStatus('mock', `Using mock data for ${endpoint}`);
+				return mockData;
+			} catch (error) {
+				console.error(`Failed to load mock data for ${endpoint}:`, error);
+				// Continue with normal API request if mock data fails
+			}
+		}
+
 		const url = `${API_BASE_URL}${endpoint}`;
 
 		// Create abort controller for timeout
@@ -128,20 +196,9 @@ export class ApiClient {
 					return this.request<T>(endpoint, options, timeout, retryCount + 1);
 				}
 
-				// After max retries, try to use mock data if available
-				if (USE_MOCK_DATA_FALLBACK && hasMockData(endpoint)) {
-					console.log(`Falling back to mock data for ${endpoint}`);
-					try {
-						const mockData = await fetchMockData<T>(endpoint);
-						updateConnectionStatus('mock', `Using mock data for ${endpoint}`);
-						return mockData;
-					} catch (mockError) {
-						console.error(`Failed to load mock data for ${endpoint}:`, mockError);
-						throw new Error(`Request timeout after ${MAX_RETRIES} attempts: ${url}`);
-					}
-				}
-
-				throw new Error(`Request timeout after ${MAX_RETRIES} attempts: ${url}`);
+				// After max retries, provide minimal fallback data structure
+				console.log(`Request failed after ${MAX_RETRIES} retries, using fallback data`);
+				return getFallbackData(endpoint) as T;
 			}
 
 			updateConnectionStatus(
@@ -159,8 +216,8 @@ export class ApiClient {
 				return this.request<T>(endpoint, options, timeout, retryCount + 1);
 			}
 
-			// If all retries fail, try to use mock data if available
-			if (USE_MOCK_DATA_FALLBACK && hasMockData(endpoint)) {
+			// If all retries fail and we're in development, try to use mock data
+			if (hasMockData(endpoint) && shouldUseMockData()) {
 				console.log(`Falling back to mock data for ${endpoint}`);
 				try {
 					const mockData = await fetchMockData<T>(endpoint);
@@ -168,11 +225,12 @@ export class ApiClient {
 					return mockData;
 				} catch (mockError) {
 					console.error(`Failed to load mock data for ${endpoint}:`, mockError);
-					throw error;
 				}
 			}
 
-			throw error;
+			// Provide minimal fallback data structure for production environments
+			console.log(`Request failed, using fallback data for ${endpoint}`);
+			return getFallbackData(endpoint) as T;
 		}
 	}
 

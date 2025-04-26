@@ -59,7 +59,7 @@
 	}
 	
 	.primary:hover:not(:disabled) {
-		background-color: var(--primary-hover, #2563eb);
+		background-color: var(--primary-hover);
 	}
 	
 	.secondary {
@@ -68,16 +68,16 @@
 	}
 	
 	.secondary:hover:not(:disabled) {
-		background-color: var(--secondary-hover, #4b5563);
+		background-color: var(--secondary-hover);
 	}
 	
 	.danger {
-		background-color: var(--danger, #ef4444);
+		background-color: var(--danger);
 		color: white;
 	}
 	
 	.danger:hover:not(:disabled) {
-		background-color: var(--danger-hover, #dc2626);
+		background-color: var(--danger-hover);
 	}
 	
 	.ghost {
@@ -90,9 +90,9 @@
 	}
 	
 	.default {
-		background-color: var(--bg-button, #f9fafb);
+		background-color: var(--bg-secondary);
 		color: var(--text-primary);
-		border-color: var(--border);
+		border-color: var(--border-color);
 	}
 	
 	.default:hover:not(:disabled) {
@@ -102,7 +102,7 @@
 	.outline {
 		background-color: transparent;
 		color: var(--text-primary);
-		border-color: var(--border);
+		border-color: var(--border-color);
 	}
 	
 	.outline:hover:not(:disabled) {

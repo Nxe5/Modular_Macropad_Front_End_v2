@@ -3,7 +3,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	// Consult https://svelte.dev/docs/kit/integrations
+	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
 	// for more information about preprocessors
 	preprocess: vitePreprocess(),
 
@@ -14,11 +14,12 @@ const config = {
 			assets: 'build',
 			fallback: 'index.html', // Use SPA mode with a single HTML entry point
 			precompress: false,
-			strict: false
+			strict: true
 		}),
 
 		// Force SPA mode
 		paths: {
+			base: '',
 			relative: false
 		},
 
@@ -34,7 +35,14 @@ const config = {
 		},
 
 		// Ensure all files use proper ES module loading
-		moduleExtensions: ['.js', '.ts', '.svelte']
+		moduleExtensions: ['.js', '.ts', '.svelte'],
+
+		inlineStyleThreshold: 5000,
+
+		// Exclude mock data from the production build
+		files: {
+			assets: 'static'
+		}
 	}
 };
 

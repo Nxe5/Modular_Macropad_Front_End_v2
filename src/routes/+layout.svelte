@@ -32,4 +32,15 @@
 		flex-direction: column;
 		min-height: 100vh;
 	}
+
+	.main {
+		display: grid;
+		flex-direction: column;
+		gap: 2rem;
+		width: 100%;
+		height: 100%;
+		max-height: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
 </style>

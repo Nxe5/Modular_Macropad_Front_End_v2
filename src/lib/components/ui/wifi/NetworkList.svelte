@@ -70,6 +70,7 @@
 		<Button 
 			on:click={handleScan} 
 			disabled={$isScanning}
+			variant="primary"
 		>
 			{#if $isScanning}
 				<span class="spinner"></span>
@@ -141,12 +142,12 @@
 <style>
 	.network-list {
 		border-radius: 0.5rem;
-		background: var(--background-primary);
+		background: var(--bg-primary);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 		width: 100%;
 		max-width: 500px;
 		margin: 0 auto;
-		border: 1px solid var(--border);
+		border: 1px solid var(--border-color);
 	}
 	
 	.list-header {
@@ -154,7 +155,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1rem;
-		border-bottom: 1px solid var(--border);
+		border-bottom: 1px solid var(--border-color);
 	}
 	
 	.list-header h3 {
@@ -185,8 +186,8 @@
 		align-items: center;
 		width: 100%;
 		padding: 0.75rem 1rem;
-		background-color: var(--background-secondary);
-		border: 1px solid var(--border);
+		background-color: var(--bg-secondary);
+		border: 1px solid var(--border-color);
 		border-radius: 0.375rem;
 		font-size: 1rem;
 		text-align: left;
@@ -196,7 +197,7 @@
 	}
 	
 	.dropdown-button:hover:not(:disabled) {
-		border-color: var(--primary);
+		border-color: var(--accent-color);
 	}
 	
 	.dropdown-button:disabled {
@@ -219,8 +220,8 @@
 		left: 0;
 		right: 0;
 		z-index: 10;
-		background-color: var(--background-primary);
-		border: 1px solid var(--border);
+		background-color: var(--bg-primary);
+		border: 1px solid var(--border-color);
 		border-radius: 0.375rem;
 		max-height: 300px;
 		overflow-y: auto;
@@ -234,7 +235,7 @@
 		padding: 0.875rem 1rem;
 		cursor: pointer;
 		transition: background-color 0.2s;
-		border-bottom: 1px solid var(--border);
+		border-bottom: 1px solid var(--border-color);
 	}
 	
 	.dropdown-item:last-child {
@@ -242,11 +243,11 @@
 	}
 	
 	.dropdown-item:hover {
-		background-color: var(--background-secondary);
+		background-color: var(--bg-secondary);
 	}
 	
 	.dropdown-item.connected {
-		background-color: var(--primary-light);
+		background-color: rgba(61, 139, 253, 0.1);
 	}
 	
 	.network-info {
@@ -273,40 +274,45 @@
 	.signal-bar {
 		width: 4px;
 		height: 16px;
-		background-color: var(--text-tertiary);
+		background-color: var(--text-secondary);
+		opacity: 0.3;
 		border-radius: 1px;
 	}
 	
 	.signal-weak .signal-bar:nth-child(1) {
 		background-color: var(--text-secondary);
+		opacity: 1;
 	}
 	
 	.signal-fair .signal-bar:nth-child(1),
 	.signal-fair .signal-bar:nth-child(2) {
 		background-color: var(--text-secondary);
+		opacity: 1;
 	}
 	
 	.signal-good .signal-bar:nth-child(1),
 	.signal-good .signal-bar:nth-child(2),
 	.signal-good .signal-bar:nth-child(3) {
 		background-color: var(--text-secondary);
+		opacity: 1;
 	}
 	
 	.signal-excellent .signal-bar {
 		background-color: var(--text-secondary);
+		opacity: 1;
 	}
 	
 	.connected-indicator {
 		font-size: 0.75rem;
-		color: var(--primary);
+		color: var(--accent-color);
 		font-weight: 600;
 	}
 	
 	.connected-badge {
 		font-size: 0.75rem;
-		color: var(--primary);
+		color: var(--accent-color);
 		font-weight: 600;
-		background-color: var(--primary-light);
+		background-color: rgba(61, 139, 253, 0.1);
 		padding: 0.25rem 0.5rem;
 		border-radius: 1rem;
 		margin-left: 0.5rem;
@@ -325,11 +331,13 @@
 		border-radius: 50%;
 		border-top-color: white;
 		animation: spin 1s ease-in-out infinite;
+		margin-right: 0.5rem;
 	}
 	
 	.icon {
 		display: inline-block;
 		font-size: 1rem;
+		margin-right: 0.5rem;
 	}
 	
 	@keyframes spin {

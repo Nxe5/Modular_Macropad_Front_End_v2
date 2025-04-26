@@ -198,6 +198,7 @@
 						<Button 
 							type="submit"
 							disabled={$isConnecting || (network.encryption !== 'OPEN' && !password && !apMode)}
+							variant="primary"
 						>
 							{#if $isConnecting}
 								Connecting...

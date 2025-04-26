@@ -65,12 +65,13 @@
 <style>
 	.wifi-status-card {
 		border-radius: 0.5rem;
-		background: var(--card-bg);
-		box-shadow: var(--shadow-sm);
+		background: var(--bg-primary);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 		width: 100%;
 		max-width: 500px;
 		margin: 0 auto 1.5rem auto;
 		overflow: hidden;
+		border: 1px solid var(--border-color);
 	}
 	
 	.status-header {
@@ -85,6 +86,7 @@
 		margin: 0;
 		font-size: 1rem;
 		font-weight: 600;
+		color: var(--text-primary);
 	}
 	
 	.status-indicator {
@@ -95,13 +97,13 @@
 	}
 	
 	.status-indicator.connected {
-		background: var(--success-bg);
-		color: var(--success-text);
+		background: rgba(52, 199, 89, 0.1);
+		color: #34c759;
 	}
 	
 	.status-indicator.disconnected {
-		background: var(--error-bg);
-		color: var(--error-text);
+		background: rgba(255, 59, 48, 0.1);
+		color: #ff3b30;
 	}
 	
 	.status-details {
@@ -113,7 +115,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 0.5rem 0;
-		border-bottom: 1px solid var(--border-color-light);
+		border-bottom: 1px solid var(--border-color);
 	}
 	
 	.status-item:last-child {
@@ -127,6 +129,7 @@
 	
 	.value {
 		font-weight: 400;
+		color: var(--text-primary);
 	}
 	
 	.signal-strength {
@@ -137,12 +140,14 @@
 	.signal-bar {
 		width: 4px;
 		height: 12px;
-		background-color: var(--text-tertiary);
+		background-color: var(--text-secondary);
+		opacity: 0.3;
 		border-radius: 1px;
 	}
 	
 	.signal-bar.active {
-		background-color: var(--primary-color);
+		background-color: var(--accent-color);
+		opacity: 1;
 	}
 	
 	.empty-state {

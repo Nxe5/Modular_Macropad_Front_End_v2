@@ -58,7 +58,7 @@
 		gap: 1.5rem;
 		padding-bottom: 0.5rem;
 		margin-bottom: 1.5rem;
-		border-bottom: 1px solid var(--border);
+		border-bottom: 1px solid var(--border-color);
 	}
 	
 	.nav-item {
@@ -75,11 +75,11 @@
 	
 	.nav-item:hover {
 		color: var(--text-primary);
-		background-color: var(--background-secondary);
+		background-color: var(--bg-secondary);
 	}
 	
 	.nav-item.active {
-		color: var(--primary);
+		color: var(--accent-color);
 		font-weight: 600;
 		position: relative;
 	}
@@ -91,7 +91,7 @@
 		left: 0;
 		width: 100%;
 		height: 2px;
-		background-color: var(--primary);
+		background-color: var(--accent-color);
 	}
 	
 	.settings-content {
