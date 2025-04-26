@@ -25,10 +25,12 @@
 	
 	// Color modes
 	const colorModes = [
-		{ id: 0, name: 'Static' },
-		{ id: 1, name: 'Breathing' },
-		{ id: 2, name: 'Rainbow' },
-		{ id: 3, name: 'Reactive' }
+		{ id: 0, name: 'Static' },         // LED_MODE_STATIC
+		{ id: 1, name: 'Animation' },      // LED_MODE_ANIMATION
+		{ id: 2, name: 'Button-controlled' }, // LED_MODE_BUTTON
+		{ id: 3, name: 'Pulse' },          // LED_MODE_PULSE
+		{ id: 4, name: 'Rainbow' },        // LED_MODE_RAINBOW
+		{ id: 5, name: 'Breathing' }       // LED_MODE_BREATHING
 	];
 	
 	// Open color pickers

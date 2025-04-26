@@ -6,6 +6,7 @@
 	import LEDGrid from '$lib/components/lighting/LEDGrid.svelte';
 	import LEDConfigPanel from '$lib/components/lighting/LEDConfigPanel.svelte';
 	import LEDLayerNav from '$lib/components/lighting/LEDLayerNav.svelte';
+	import LEDLayerAnimation from '$lib/components/lighting/LEDLayerAnimation.svelte';
 	
 	// State management
 	let loading = true;
@@ -322,6 +323,41 @@
 			alert(`Failed to save LED configuration: ${err.message}`);
 		}
 	}
+	
+	// Handle animation updates for the active layer
+	function handleAnimationUpdate(animationSettings: any) {
+		if (!ledsData || !ledsData.leds || !activeLayer) return;
+		
+		// Find the active layer
+		if (ledsData.leds.layers && Array.isArray(ledsData.leds.layers)) {
+			const layerIndex = ledsData.leds.layers.findIndex((l: any) => l['layer-name'] === activeLayer);
+			if (layerIndex >= 0) {
+				// Update animation settings
+				ledsData.leds.layers[layerIndex].animation = animationSettings;
+				hasChanges = true;
+			}
+		} else {
+			// Legacy format support
+			ledsData.leds.animation = animationSettings;
+			hasChanges = true;
+		}
+	}
+	
+	// Get animation settings for the active layer
+	function getActiveLayerAnimation() {
+		if (!ledsData || !ledsData.leds || !activeLayer) {
+			return { active: false, mode: 0, speed: 100 };
+		}
+		
+		// Check if we're using the new layers format
+		if (ledsData.leds.layers && Array.isArray(ledsData.leds.layers)) {
+			const layer = ledsData.leds.layers.find((l: any) => l['layer-name'] === activeLayer);
+			return layer?.animation || { active: false, mode: 0, speed: 100 };
+		}
+		
+		// Legacy format support
+		return ledsData.leds.animation || { active: false, mode: 0, speed: 100 };
+	}
 </script>
 
 <div class="page-container">
@@ -366,6 +402,13 @@
 			onRemoveLayer={handleRemoveLayer}
 			onRenameLayer={handleRenameLayer}
 		/>
+		
+		{#if activeLayer}
+			<LEDLayerAnimation 
+				animationSettings={getActiveLayerAnimation()}
+				onChange={handleAnimationUpdate}
+			/>
+		{/if}
 		
 		<div class="main-content">
 			<div class="led-visual">

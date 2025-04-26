@@ -1,6 +1,7 @@
 import { ApiClient } from './client';
 import type { MacropadConfig } from '$lib/types/config';
 import { API_ENDPOINTS } from './endpoints';
+import { processLedsForApi, processLedsFromApi } from '$lib/utils/led';
 
 /**
  * API client for configuration endpoints
@@ -52,14 +53,18 @@ export class ConfigApi {
 	 * Get LED configuration
 	 */
 	static async getLeds() {
-		return ApiClient.get(API_ENDPOINTS.CONFIG.LEDS);
+		const response = await ApiClient.get(API_ENDPOINTS.CONFIG.LEDS);
+		// Convert brightness from firmware scale (0-255) to UI scale (0-20)
+		return processLedsFromApi(response);
 	}
 
 	/**
 	 * Update LED configuration
 	 */
 	static async updateLeds(data: any) {
-		return ApiClient.post(API_ENDPOINTS.CONFIG.LEDS, data);
+		// Convert brightness from UI scale (0-20) to firmware scale (0-255)
+		const processedData = processLedsForApi(data);
+		return ApiClient.post(API_ENDPOINTS.CONFIG.LEDS, processedData);
 	}
 
 	/**
