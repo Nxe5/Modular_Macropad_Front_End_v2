@@ -20,7 +20,7 @@
 	// Color state
 	$: color = selectedLEDData?.color || { r: 0, g: 0, b: 0 };
 	$: pressedColor = selectedLEDData?.pressed_color || { r: 255, g: 255, b: 255 };
-	$: brightness = selectedLEDData?.brightness || 8;
+	$: brightness = selectedLEDData?.brightness || 8; // Default to 8 (scaled 0-20 for UI)
 	$: mode = selectedLEDData?.mode || 0;
 	
 	// Color modes
